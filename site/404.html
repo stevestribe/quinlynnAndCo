@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Page not found — Quinlynn &amp; Co.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Manrope:wght@400;500&display=swap" />
+<link rel="stylesheet" href="css/styles.css" />
+<style>
+  .not-found {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: var(--gutter);
+    gap: 24px;
+  }
+  .not-found .num {
+    font-family: var(--serif);
+    font-size: clamp(80px, 18vw, 160px);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--linen);
+  }
+</style>
+</head>
+<body data-density="compact">
+<div class="not-found">
+  <div class="num">404</div>
+  <span class="eyebrow">Page not found</span>
+  <h1 class="h-section" style="max-width:480px">
+    This page seems to have wandered off.
+  </h1>
+  <p class="lede" style="max-width:360px">
+    It may have moved, or it may never have existed. Either way, the studio is just one click away.
+  </p>
+  <a class="btn" href="/">Back to the studio</a>
+</div>
+</body>
+</html>

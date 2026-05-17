@@ -1,0 +1,94 @@
+name: Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Publish target (e.g. staging)
+        required: false
+        type: string
+        default: staging
+      commit_sha:
+        description: Commit SHA to deploy (leave blank to use branch HEAD)
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quinlynnandco-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy-staging:
+    name: Deploy site to staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out deploy commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha || github.ref }}
+
+      - name: Validate staging deployment inputs
+        shell: bash
+        env:
+          IONOS_SFTP_HOST: ${{ secrets.IONOS_SFTP_HOST }}
+          IONOS_SFTP_USER: ${{ secrets.IONOS_SFTP_USER }}
+          IONOS_SFTP_PASSWORD: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          IONOS_SFTP_PORT: ${{ secrets.IONOS_SFTP_PORT }}
+          IONOS_STAGING_REMOTE_PATH: ${{ secrets.IONOS_STAGING_REMOTE_PATH }}
+          IONOS_PRODUCTION_REMOTE_PATH: ${{ secrets.IONOS_PRODUCTION_REMOTE_PATH }}
+        run: |
+          set -euo pipefail
+
+          for name in \
+            IONOS_SFTP_HOST \
+            IONOS_SFTP_USER \
+            IONOS_SFTP_PASSWORD \
+            IONOS_SFTP_PORT \
+            IONOS_STAGING_REMOTE_PATH \
+            IONOS_PRODUCTION_REMOTE_PATH
+          do
+            if [[ -z "${!name}" ]]; then
+              echo "Missing required secret: ${name}" >&2
+              exit 1
+            fi
+          done
+
+          if [[ "$IONOS_STAGING_REMOTE_PATH" == "$IONOS_PRODUCTION_REMOTE_PATH" ]]; then
+            echo "Staging and production remote paths must be different." >&2
+            exit 1
+          fi
+
+          test -d site
+          test -f site/index.html
+
+      - name: Install SFTP mirroring tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends lftp
+
+      - name: Mirror site to staging
+        shell: bash
+        env:
+          IONOS_SFTP_HOST: ${{ secrets.IONOS_SFTP_HOST }}
+          IONOS_SFTP_USER: ${{ secrets.IONOS_SFTP_USER }}
+          IONOS_SFTP_PASSWORD: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          IONOS_SFTP_PORT: ${{ secrets.IONOS_SFTP_PORT }}
+          IONOS_STAGING_REMOTE_PATH: ${{ secrets.IONOS_STAGING_REMOTE_PATH }}
+        run: |
+          set -euo pipefail
+
+          lftp <<LFTP_SCRIPT
+          set cmd:fail-exit yes
+          set net:max-retries 2
+          set net:timeout 20
+          set sftp:auto-confirm yes
+          open -u "$IONOS_SFTP_USER","$IONOS_SFTP_PASSWORD" "sftp://$IONOS_SFTP_HOST:$IONOS_SFTP_PORT"
+          mirror --reverse --delete --verbose --exclude-glob .DS_Store site/ "$IONOS_STAGING_REMOTE_PATH"
+          bye
+          LFTP_SCRIPT

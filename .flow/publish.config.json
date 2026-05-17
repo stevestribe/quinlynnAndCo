@@ -1,0 +1,21 @@
+{
+  "project": "quinlynnAndCo",
+  "sourcePath": "site",
+  "workflow": ".github/workflows/deploy-staging.yml",
+  "publishBranch": "main",
+  "requiredSecrets": [
+    "IONOS_SFTP_HOST",
+    "IONOS_SFTP_USER",
+    "IONOS_SFTP_PASSWORD",
+    "IONOS_SFTP_PORT",
+    "IONOS_STAGING_REMOTE_PATH",
+    "IONOS_PRODUCTION_REMOTE_PATH"
+  ],
+  "targets": {
+    "staging": {
+      "label": "Staging",
+      "mode": "source-to-staging",
+      "remotePathSecret": "IONOS_STAGING_REMOTE_PATH"
+    }
+  }
+}

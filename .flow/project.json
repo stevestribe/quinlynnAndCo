@@ -1,0 +1,9 @@
+{
+  "slug": "quinlynnAndCo",
+  "githubRepo": "stevestribe/quinlynnAndCo",
+  "publicRoot": "site",
+  "previewRecipePath": ".flow/preview.json",
+  "publishRecipePath": ".flow/publish.json",
+  "defaultAgent": "codex",
+  "defaultBaseBranch": "main"
+}

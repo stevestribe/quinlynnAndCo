@@ -1,0 +1,15 @@
+# Local deployment secrets
+.env.deploy.local
+.env*.local
+
+# Local machine/editor files
+.DS_Store
+.claude/
+
+# Never commit environment secrets
+.env
+.env.*
+
+# Allow committed example env files
+!.env.example
+!.env.deploy.example

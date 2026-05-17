@@ -1,4 +1,18 @@
 {
-  "command": "bash scripts/preview-site.sh",
-  "root": "site"
+  "defaultMode": "full",
+  "modes": {
+    "full": {
+      "kind": "script",
+      "path": "scripts/preview-site.sh",
+      "cwd": ".",
+      "args": [],
+      "env": {
+        "PORT": "8766"
+      },
+      "description": "Serve the static Quinlynn & Co. site from /site for layout and mobile review."
+    }
+  },
+  "context": {
+    "route": "/"
+  }
 }

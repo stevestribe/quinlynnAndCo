@@ -1,36 +1,66 @@
 #!/usr/bin/env bash
-# Publish site/ to IONOS staging via SFTP.
-# Requires .env.deploy.local to be populated (see .env.deploy.example).
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENV_FILE="$REPO_ROOT/.env.deploy.local"
+REPO="stevestribe/quinlynnAndCo"
+WORKFLOW_FILE="deploy-staging.yml"
 
-if [[ ! -f "$ENV_FILE" ]]; then
-  echo "Error: $ENV_FILE not found. Copy .env.deploy.example to .env.deploy.local and fill it in." >&2
+if [[ -z "${FLOW_COMMIT_SHA:-}" ]]; then
+  echo "FLOW_COMMIT_SHA is required." >&2
   exit 1
 fi
 
-# shellcheck source=/dev/null
-source "$ENV_FILE"
+if [[ "${FLOW_BRANCH:-}" != "main" ]]; then
+  echo "Staging publish must run from main. Current branch: ${FLOW_BRANCH:-unknown}" >&2
+  exit 1
+fi
 
-for var in IONOS_SFTP_HOST IONOS_SFTP_USER IONOS_SFTP_PASSWORD IONOS_SFTP_PORT IONOS_STAGING_REMOTE_PATH; do
-  if [[ -z "${!var:-}" ]]; then
-    echo "Error: $var is not set in .env.deploy.local" >&2
-    exit 1
+if ! command -v gh >/dev/null 2>&1; then
+  echo "GitHub CLI is required to dispatch the staging workflow." >&2
+  exit 1
+fi
+
+workflow_ready=0
+for _ in {1..30}; do
+  if gh workflow view "$WORKFLOW_FILE" --repo "$REPO" >/dev/null 2>&1; then
+    workflow_ready=1
+    break
   fi
+  sleep 2
 done
 
-echo "Mirroring site/ → staging: $IONOS_STAGING_REMOTE_PATH"
+if [[ "$workflow_ready" != "1" ]]; then
+  echo "GitHub workflow is not available yet: ${WORKFLOW_FILE}" >&2
+  exit 1
+fi
 
-lftp <<LFTP_SCRIPT
-set cmd:fail-exit yes
-set net:max-retries 2
-set net:timeout 20
-set sftp:auto-confirm yes
-open -u "$IONOS_SFTP_USER","$IONOS_SFTP_PASSWORD" "sftp://$IONOS_SFTP_HOST:$IONOS_SFTP_PORT"
-mirror --reverse --delete --verbose --exclude-glob .DS_Store "$REPO_ROOT/site/" "$IONOS_STAGING_REMOTE_PATH"
-bye
-LFTP_SCRIPT
+echo "Dispatching staging deploy workflow for commit ${FLOW_COMMIT_SHA}."
+gh workflow run "$WORKFLOW_FILE" \
+  --repo "$REPO" \
+  --ref main \
+  -f commit_sha="$FLOW_COMMIT_SHA"
 
-echo "Done."
+run_id=""
+for _ in {1..30}; do
+  run_id="$(
+    gh run list \
+      --repo "$REPO" \
+      --workflow "$WORKFLOW_FILE" \
+      --event workflow_dispatch \
+      --json databaseId,headSha,status,createdAt \
+      --jq ".[] | select(.headSha == \"${FLOW_COMMIT_SHA}\") | .databaseId" |
+      head -n 1
+  )"
+
+  if [[ -n "$run_id" ]]; then
+    break
+  fi
+  sleep 2
+done
+
+if [[ -z "$run_id" ]]; then
+  echo "Could not find the dispatched staging workflow run." >&2
+  exit 1
+fi
+
+echo "Watching staging deploy run ${run_id}."
+gh run watch "$run_id" --repo "$REPO" --exit-status

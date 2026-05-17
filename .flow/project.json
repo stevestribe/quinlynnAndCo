@@ -4,6 +4,7 @@
   "publicRoot": "site",
   "previewRecipePath": ".flow/preview.json",
   "publishRecipePath": ".flow/publish.json",
+  "publishConfigPath": ".flow/publish.config.json",
   "defaultAgent": "codex",
   "defaultBaseBranch": "main"
 }

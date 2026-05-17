@@ -25,6 +25,14 @@ I'd rather finish one thing well than ten things quickly. Everything in this stu
 ### bio2
 Each piece is cut, sewn, and pressed slowly — often over several mornings. Materials are chosen for how they age: linen that softens, cotton that drapes, thread that disappears into the seam. Custom work is welcomed, and treated with the same patient attention.
 
+### sign
+— Ashley
+
+### meta
+Studio · home, McKinney, TX
+Practice · est. 2023
+Mother of six
+
 ## products
 
 ### heading

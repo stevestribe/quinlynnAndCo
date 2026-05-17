@@ -185,14 +185,22 @@ def main():
     def get(section, sub):
         return secs.get(section, {}).get(sub, '')
 
+    # Build about-meta block (one <div> per non-empty line)
+    meta_lines = [l.strip() for l in get('about', 'meta').split('\n') if l.strip()]
+    about_meta_html = '\n          '.join(f'<div>{esc(l)}</div>' for l in meta_lines)
+    if about_meta_html:
+        about_meta_html = '\n          ' + about_meta_html + '\n        '
+
     # Simple inline injections
     simple = [
         ('hero-title',      md_inline(get('hero', 'title'))),
         ('hero-sub',        md_inline(get('hero', 'sub'))),
         ('about-heading',   md_inline(get('about', 'heading'))),
         ('about-bio1',      md_inline(get('about', 'bio1'))),
-        ('about-quote',     '“' + md_inline(get('about', 'quote')) + '”'),
+        ('about-quote',     '”' + md_inline(get('about', 'quote')) + '”'),
         ('about-bio2',      md_inline(get('about', 'bio2'))),
+        ('about-sign',      md_inline(get('about', 'sign'))),
+        ('about-meta',      about_meta_html),
         ('products-heading', md_inline(get('products', 'heading'))),
         ('custom-heading',  md_inline(get('custom', 'heading'))),
         ('custom-lede',     md_inline(get('custom', 'lede'))),

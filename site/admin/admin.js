@@ -165,13 +165,18 @@
     var bio1    = esc(subs.bio1 || “”);
     var quote   = esc(subs.quote || “”);
     var bio2    = esc(subs.bio2 || “”);
+    var sign    = esc(subs.sign || “”);
+    var metaLines = (subs.meta || “”).split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+    var metaHtml = metaLines.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('');
     return '<div class=”psec”>' +
       '<div class=”sec-label”>About</div>' +
       '<div class=”about-body” style=”max-width:100%”>' +
-      (heading ? '<h2 class=”h-section”>' + heading + '</h2>' : '') +
-      (bio1    ? '<p class=”body”>' + bio1 + '</p>' : '') +
-      (quote   ? '<blockquote class=”about-quote”>&ldquo;' + quote + '&rdquo;</blockquote>' : '') +
-      (bio2    ? '<p class=”body”>' + bio2 + '</p>' : '') +
+      (heading  ? '<h2 class=”h-section”>' + heading + '</h2>' : '') +
+      (bio1     ? '<p class=”body”>' + bio1 + '</p>' : '') +
+      (quote    ? '<blockquote class=”about-quote”>&ldquo;' + quote + '&rdquo;</blockquote>' : '') +
+      (bio2     ? '<p class=”body”>' + bio2 + '</p>' : '') +
+      (sign     ? '<div class=”about-sign”>' + sign + '</div>' : '') +
+      (metaHtml ? '<div class=”about-aside-meta” style=”margin-top:.5rem”>' + metaHtml + '</div>' : '') +
       '</div>' +
       '</div>';
   }

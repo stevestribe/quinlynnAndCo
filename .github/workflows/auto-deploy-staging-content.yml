@@ -1,18 +1,14 @@
-name: Deploy Staging
+name: Auto-Deploy Staging on Content Change
+
+# Triggers when Markdown content files are pushed to main.
+# Rebuilds HTML from content and mirrors to staging.
+# Separate from deploy-staging.yml so flow publish still works.
 
 on:
-  workflow_dispatch:
-    inputs:
-      target:
-        description: Publish target (e.g. staging)
-        required: false
-        type: string
-        default: staging
-      commit_sha:
-        description: Commit SHA to deploy (leave blank to use branch HEAD)
-        required: false
-        type: string
-        default: ""
+  push:
+    branches: [main]
+    paths:
+      - "site/content/pages/*.md"
 
 permissions:
   contents: read
@@ -22,14 +18,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy-staging:
-    name: Deploy site to staging
+  build-and-deploy:
+    name: Build HTML and deploy to staging
     runs-on: ubuntu-latest
     steps:
-      - name: Check out deploy commit
+      - name: Check out main
         uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.commit_sha || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -53,7 +47,6 @@ jobs:
           IONOS_PRODUCTION_REMOTE_PATH: ${{ secrets.IONOS_PRODUCTION_REMOTE_PATH }}
         run: |
           set -euo pipefail
-
           for name in \
             IONOS_SFTP_HOST \
             IONOS_SFTP_USER \
@@ -67,17 +60,14 @@ jobs:
               exit 1
             fi
           done
-
           if [[ "$IONOS_STAGING_REMOTE_PATH" == "$IONOS_PRODUCTION_REMOTE_PATH" ]]; then
             echo "Staging and production remote paths must be different." >&2
             exit 1
           fi
-
           test -d site
           test -f site/index.html
 
       - name: Install SFTP mirroring tool
-        shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update
@@ -93,7 +83,6 @@ jobs:
           IONOS_STAGING_REMOTE_PATH: ${{ secrets.IONOS_STAGING_REMOTE_PATH }}
         run: |
           set -euo pipefail
-
           lftp <<LFTP_SCRIPT
           set cmd:fail-exit yes
           set net:max-retries 2

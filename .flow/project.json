@@ -1,10 +1,23 @@
 {
   "slug": "quinlynnAndCo",
   "githubRepo": "stevestribe/quinlynnAndCo",
+  "masterSpecPath": "masterSpec_quinlynnAndCo.md",
   "publicRoot": "site",
   "previewRecipePath": ".flow/preview.json",
   "publishRecipePath": ".flow/publish.json",
   "publishConfigPath": ".flow/publish.config.json",
   "defaultAgent": "codex",
-  "defaultBaseBranch": "main"
+  "defaultBaseBranch": "main",
+  "efficiency": {
+    "enabled": true,
+    "requirePlan": true,
+    "tokenBudget": 200000,
+    "maxRework": 2,
+    "reworkPauseSeconds": 60,
+    "networkPollIntervalSeconds": 60,
+    "networkPollLimit": 3,
+    "mcpTools": [
+      "flow-mcp-server"
+    ]
+  }
 }

@@ -10,7 +10,6 @@
     { id: "home", label: "Home", file: "home.md" },
   ];
 
-  const CONTENT_BASE = "/content/pages/";
   const TOKEN_KEY    = "admin_github_token";
 
   const pageSelect   = document.getElementById("page-select");
@@ -28,6 +27,7 @@
 
   let currentPage        = null;
   let currentFrontmatter = "";
+  let _afterToken        = null; // callback(token) run after token dialog submit
   let previewTimer       = null;
 
   // ── Button busy state ────────────────────────────────────────────────────
@@ -289,7 +289,7 @@
   function refreshPreview() { previewFrame.srcdoc = buildPreviewDoc(editor.value); }
   function schedulePreview() { clearTimeout(previewTimer); previewTimer = setTimeout(refreshPreview, 300); }
 
-  // ── Load page ─────────────────────────────────────────────────────────────
+  // ── Load page (reads from GitHub API — avoids server file-serving issues) ──
 
   function loadPage(pageId) {
     var page = PAGES.find(function (p) { return p.id === pageId; });
@@ -298,9 +298,21 @@
     editor.value = ""; editor.placeholder = "Loading…";
     setBusy(true); setStatus("Loading…");
 
-    fetch(CONTENT_BASE + page.file, { cache: "no-cache" })
-      .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.text(); })
-      .then(function (text) {
+    var token   = getToken();
+    var headers = { "Accept": "application/vnd.github.v3+json" };
+    if (token) headers["Authorization"] = "token " + token;
+
+    fetch(CONTENT_API + page.file, { headers: headers, cache: "no-cache" })
+      .then(function (res) {
+        if (res.status === 401 || res.status === 403)
+          throw Object.assign(new Error("A GitHub token is needed to load this content."), { code: "auth" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (json) {
+        var raw    = json.content.replace(/\n/g, "");
+        var bytes  = Uint8Array.from(atob(raw), function (c) { return c.charCodeAt(0); });
+        var text   = new TextDecoder("utf-8").decode(bytes);
         var parsed = splitFrontmatter(text);
         currentFrontmatter = parsed.frontmatter;
         editor.value = parsed.body;
@@ -310,8 +322,14 @@
         clearStatusAfter(2000);
       })
       .catch(function (err) {
-        editor.placeholder = "Could not load content file.";
-        setStatus("Load failed: " + err.message, "is-err");
+        if (err.code === "auth") {
+          clearToken();
+          // _afterToken is null → tokenForm submit will re-call loadPage
+          showTokenDialog(err.message);
+        } else {
+          editor.placeholder = "Could not load content file.";
+          setStatus("Load failed: " + err.message, "is-err");
+        }
       })
       .finally(function () { setBusy(false); });
   }
@@ -376,7 +394,7 @@
       setStatus("Published! Staging rebuilds in ~2 min.", "is-ok");
       clearStatusAfter(12000);
     } catch (err) {
-      if (err.code === "auth") { clearToken(); showTokenDialog("That token did not work: " + err.message); }
+      if (err.code === "auth") { clearToken(); _afterToken = function (t) { doPublish(t); }; showTokenDialog("That token did not work: " + err.message); }
       else { setStatus("Publish failed: " + err.message, "is-err"); }
     } finally { setBusy(false); }
   }
@@ -384,7 +402,9 @@
   function handlePublishClick() {
     if (!isEditorReady()) return;
     var token = getToken();
-    if (token) doPublish(token); else showTokenDialog();
+    if (token) { doPublish(token); return; }
+    _afterToken = function (t) { doPublish(t); };
+    showTokenDialog();
   }
 
   // ── Token dialog ──────────────────────────────────────────────────────────
@@ -400,16 +420,19 @@
     e.preventDefault();
     var token = tokenInput.value.trim();
     if (!token) { tokenError.textContent = "Please enter a token."; tokenError.hidden = false; tokenInput.focus(); return; }
-    saveToken(token); tokenDialog.close(); doPublish(token);
+    saveToken(token); tokenDialog.close();
+    var fn = _afterToken; _afterToken = null;
+    if (fn) fn(token); else loadPage(currentPage ? currentPage.id : pageSelect.value);
   });
   tokenDialog.addEventListener("click", function (e) { if (e.target === tokenDialog) tokenDialog.close(); });
 
-  // ── Init ──────────────────────────────────────────────────────────────────
+  // ── Init — decouple content load from marked.js CDN ──────────────────────
 
   pageSelect.addEventListener("change", function () { loadPage(pageSelect.value); });
   editor.addEventListener("input", schedulePreview);
   downloadBtn.addEventListener("click", downloadFile);
   publishBtn.addEventListener("click", handlePublishClick);
 
-  loadMarked(function () { loadPage(pageSelect.value); });
+  loadPage(pageSelect.value);
+  loadMarked(function () { if (editor.value.trim()) refreshPreview(); });
 })();

@@ -1,10 +1,10 @@
-name: Deploy Staging
+name: Deploy
 
 on:
   workflow_dispatch:
     inputs:
       target:
-        description: Publish target (e.g. staging)
+        description: Publish target (staging or production)
         required: false
         type: string
         default: staging
@@ -18,12 +18,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: quinlynnandco-staging
+  group: quinlynnandco-${{ inputs.target || 'staging' }}
   cancel-in-progress: false
 
 jobs:
-  deploy-staging:
-    name: Deploy site to staging
+  deploy:
+    name: Deploy site to ${{ inputs.target || 'staging' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out deploy commit
@@ -42,9 +42,10 @@ jobs:
       - name: Build HTML from content
         run: python3 scripts/build-site.py
 
-      - name: Validate staging deployment inputs
+      - name: Validate deployment inputs
         shell: bash
         env:
+          DEPLOY_TARGET: ${{ inputs.target || 'staging' }}
           IONOS_SFTP_HOST: ${{ secrets.IONOS_SFTP_HOST }}
           IONOS_SFTP_USER: ${{ secrets.IONOS_SFTP_USER }}
           IONOS_SFTP_PASSWORD: ${{ secrets.IONOS_SFTP_PASSWORD }}
@@ -73,6 +74,11 @@ jobs:
             exit 1
           fi
 
+          if [[ "$DEPLOY_TARGET" != "staging" && "$DEPLOY_TARGET" != "production" ]]; then
+            echo "Invalid deploy target: ${DEPLOY_TARGET}. Must be 'staging' or 'production'." >&2
+            exit 1
+          fi
+
           test -d site
           test -f site/index.html
 
@@ -84,6 +90,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends lftp
 
       - name: Mirror site to staging
+        if: ${{ inputs.target == 'staging' || inputs.target == '' }}
         shell: bash
         env:
           IONOS_SFTP_HOST: ${{ secrets.IONOS_SFTP_HOST }}
@@ -101,5 +108,29 @@ jobs:
           set sftp:auto-confirm yes
           open -u "$IONOS_SFTP_USER","$IONOS_SFTP_PASSWORD" "sftp://$IONOS_SFTP_HOST:$IONOS_SFTP_PORT"
           mirror --reverse --delete --verbose --exclude-glob .DS_Store site/ "$IONOS_STAGING_REMOTE_PATH"
+          bye
+          LFTP_SCRIPT
+
+      # admin/ and content/ are excluded: they are for staging/editing only
+      # and must never be published to the live production domain.
+      - name: Mirror site to production
+        if: ${{ inputs.target == 'production' }}
+        shell: bash
+        env:
+          IONOS_SFTP_HOST: ${{ secrets.IONOS_SFTP_HOST }}
+          IONOS_SFTP_USER: ${{ secrets.IONOS_SFTP_USER }}
+          IONOS_SFTP_PASSWORD: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          IONOS_SFTP_PORT: ${{ secrets.IONOS_SFTP_PORT }}
+          IONOS_PRODUCTION_REMOTE_PATH: ${{ secrets.IONOS_PRODUCTION_REMOTE_PATH }}
+        run: |
+          set -euo pipefail
+
+          lftp <<LFTP_SCRIPT
+          set cmd:fail-exit yes
+          set net:max-retries 2
+          set net:timeout 20
+          set sftp:auto-confirm yes
+          open -u "$IONOS_SFTP_USER","$IONOS_SFTP_PASSWORD" "sftp://$IONOS_SFTP_HOST:$IONOS_SFTP_PORT"
+          mirror --reverse --delete --verbose --exclude-glob .DS_Store --exclude-glob admin --exclude-glob content site/ "$IONOS_PRODUCTION_REMOTE_PATH"
           bye
           LFTP_SCRIPT

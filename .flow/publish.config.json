@@ -17,6 +17,13 @@
       "domain": "staging.quinlynnandco.com",
       "mode": "source-to-staging",
       "remotePathSecret": "IONOS_STAGING_REMOTE_PATH"
+    },
+    "production": {
+      "label": "Production",
+      "domain": "quinlynnandco.com",
+      "mode": "staging-to-production",
+      "remotePathSecret": "IONOS_PRODUCTION_REMOTE_PATH",
+      "sourceRemotePathSecret": "IONOS_STAGING_REMOTE_PATH"
     }
   }
 }

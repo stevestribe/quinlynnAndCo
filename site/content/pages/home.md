@@ -9,7 +9,7 @@ meta_description: Handmade bags and fabric goods, stitched slowly in McKinney, T
 Heirloom-quality fabric goods, *handmade* to be used and kept.
 
 ### sub
-Small-batch drops from a mother-daughter studio, sewn with careful hands and beautiful details.
+Small-batch drops from a mother-daughter studio, beautifully sewn with careful attention to details.
 
 ## about
 

@@ -6,10 +6,10 @@ meta_description: Handmade bags and fabric goods, stitched slowly in McKinney, T
 ## hero
 
 ### title
-Handmade goods, stitched *slowly* and intentionally.
+Heirloom-quality fabric goods, *handmade* to be used and kept.
 
 ### sub
-A small studio of bags and fabric goods, finished one piece at a time. Quiet materials, considered seams, nothing rushed.
+Small-batch drops from a mother-daughter studio, sewn with careful hands and beautiful details.
 
 ## about
 

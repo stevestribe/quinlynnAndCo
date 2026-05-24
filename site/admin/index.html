@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,400&family=Manrope:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="admin.css?v=2" />
+  <link rel="stylesheet" href="admin.css?v=3" />
 </head>
 <body>
 
@@ -25,6 +25,10 @@
 
   <div class="adm-actions">
     <span class="adm-status" id="adm-status" aria-live="polite"></span>
+    <button class="adm-btn adm-btn-toggle is-active" id="adm-pencils-toggle" title="Toggle edit pencils" aria-pressed="true">
+      <svg width="13" height="13" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 4l6 6L10 28H4v-6L22 4z"/></svg>
+      Pencils
+    </button>
     <a class="adm-btn" id="adm-view-live" href="https://staging.quinlynnandco.com/" target="_blank" rel="noopener">View live</a>
     <button class="adm-btn adm-btn-primary" id="adm-publish" disabled>Publish to staging</button>
   </div>
@@ -35,23 +39,20 @@
   <div class="adm-frame-overlay" id="adm-frame-overlay" hidden></div>
 </div>
 
-<!-- Edit panel -->
-<aside class="adm-panel" id="adm-panel" aria-hidden="true" aria-label="Edit section">
-  <div class="adm-panel-head">
-    <div class="adm-panel-title-row">
-      <h2 class="adm-panel-title" id="adm-panel-title"></h2>
-      <span class="adm-panel-edited" id="adm-panel-edited" hidden>edited</span>
-    </div>
-    <button class="adm-icon-btn" id="adm-panel-close" aria-label="Close without saving">
-      <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 8l16 16M24 8L8 24"/></svg>
+<!-- Floating field editor popup -->
+<div class="adm-popup" id="adm-popup" hidden role="dialog" aria-labelledby="adm-popup-label">
+  <div class="adm-popup-head">
+    <span class="adm-popup-label" id="adm-popup-label"></span>
+    <button class="adm-popup-x" id="adm-popup-cancel" aria-label="Cancel edit">
+      <svg width="11" height="11" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 8l16 16M24 8L8 24"/></svg>
     </button>
   </div>
-  <div class="adm-panel-body" id="adm-panel-body"></div>
-  <div class="adm-panel-foot">
-    <button class="adm-btn adm-btn-ghost" id="adm-revert">Revert section</button>
-    <button class="adm-btn adm-btn-primary" id="adm-done">Done</button>
+  <div class="adm-popup-body" id="adm-popup-body"></div>
+  <div class="adm-popup-foot">
+    <span class="adm-popup-hint" id="adm-popup-hint"></span>
+    <button class="adm-btn adm-btn-sm adm-btn-primary" id="adm-popup-confirm">Done</button>
   </div>
-</aside>
+</div>
 
 <!-- GitHub token dialog -->
 <dialog class="adm-dialog" id="token-dialog" aria-labelledby="token-dialog-title">
@@ -78,6 +79,7 @@
   </form>
 </dialog>
 
-<script src="admin.js" defer></script>
+<script src="admin-fields.js?v=3" defer></script>
+<script src="admin.js?v=3" defer></script>
 </body>
 </html>

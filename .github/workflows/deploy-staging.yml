@@ -1,6 +1,11 @@
 name: Deploy
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'site/content/pages/**'
   workflow_dispatch:
     inputs:
       target:

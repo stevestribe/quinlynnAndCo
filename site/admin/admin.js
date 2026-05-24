@@ -234,6 +234,7 @@
         '            <div class="pcard-name">' + esc(cd.name) + '</div>\n' +
         '            <div class="pcard-price">' + esc(cd.price) + '</div>\n' +
         (cd.desc ? '            <p class="pcard-desc">' + esc(cd.desc) + '</p>\n' : '') +
+        '            <!-- QC-PENCIL:card' + (i + 1) + ' -->\n' +
         '            <span class="pcard-cta">View on Etsy\n              ' + ARROW_SVG + '\n            </span>\n' +
         '          </div>\n        </a>\n'
       );
@@ -298,6 +299,7 @@
     'width:17px;height:17px;margin-left:5px;padding:0;' +
     'background:rgba(110,130,110,0.45);color:#fff;border:none;border-radius:3px;' +
     'cursor:pointer;opacity:0.25;vertical-align:middle;' +
+    'pointer-events:auto!important;' +
     'transition:opacity .18s,background .18s;flex-shrink:0;}' +
     '.qc-pencil.qc-pencil-block{display:block;margin:6px 0 0;}' +
     '.qc-pencil:hover{opacity:1!important;background:rgba(85,102,85,.9);}' +
@@ -385,15 +387,11 @@
       '$1' + pencilBtn('about-meta', 'qc-pencil-block')
     );
 
-    // Per-card pencils (renderCards adds data-card-key)
+    // Per-card pencils — placed in pcard-meta by renderCards placeholder
     for (var i = 1; i <= 6; i++) {
       var key = 'card' + i;
       if (!FIELDS[key]) continue;
-      var btn = pencilBtn(key);
-      html = html.replace(
-        new RegExp('(data-card-key="' + key + '"[^>]*>)', 'g'),
-        '$1' + btn
-      );
+      html = html.replace('<!-- QC-PENCIL:' + key + ' -->', pencilBtn(key, 'qc-pencil-block'));
     }
 
     // Apply pencil visibility state
@@ -546,6 +544,7 @@
     popupHint.textContent  = f.hint || (f.type !== 'input' ? 'Markdown: *italic*, **bold**' : '');
     popupBody.innerHTML    = buildPopupBody(fieldKey, value);
 
+    popup.style.display = 'flex';
     popup.classList.add('is-open');
     positionPopup(rect);
     attachLiveListeners();
@@ -562,6 +561,7 @@
     var key = activeKey;
     activeKey = null;
     popupPrev = null;
+    popup.style.display = 'none';
     popup.classList.remove('is-open');
     frameOver.hidden = true;
     // Update pencil dirty state in iframe
@@ -579,6 +579,7 @@
     }
     activeKey = null;
     popupPrev = null;
+    popup.style.display = 'none';
     popup.classList.remove('is-open');
     frameOver.hidden = true;
   }
@@ -750,8 +751,8 @@
   // Close popup when clicking the overlay (but not the iframe content)
   frameOver.addEventListener('click', cancelPopup);
 
-  popupConfirm.addEventListener('click', confirmPopup);
-  popupCancel.addEventListener('click', cancelPopup);
+  popupConfirm.addEventListener('click', function (e) { e.stopPropagation(); confirmPopup(); });
+  popupCancel.addEventListener('click',  function (e) { e.stopPropagation(); cancelPopup(); });
 
   // Keyboard: Enter on input confirms, Escape cancels anywhere
   popupBody.addEventListener('keydown', function (e) {

@@ -385,13 +385,30 @@
 
   // ── Publish ───────────────────────────────────────────────────────────────
 
+  async function triggerDeploy(token) {
+    var res = await fetch(
+      "https://api.github.com/repos/" + GITHUB_REPO + "/actions/workflows/deploy-staging.yml/dispatches",
+      {
+        method: "POST",
+        headers: ghHeaders(token),
+        body: JSON.stringify({ ref: GITHUB_BRANCH, inputs: { target: "staging" } }),
+      }
+    );
+    if (res.status === 401 || res.status === 403)
+      throw Object.assign(new Error("Token lacks Actions permission."), { code: "auth" });
+    if (res.status !== 204)
+      throw new Error("Deploy trigger failed (HTTP " + res.status + ").");
+  }
+
   async function doPublish(token) {
     if (!isEditorReady()) return;
     setBusy(true); setStatus("Publishing…");
     try {
       var sha = await getFileSha(currentPage.id, token);
       await commitFile(currentPage.id, fullContent(), sha, token);
-      setStatus("Published! Staging rebuilds in ~2 min.", "is-ok");
+      setStatus("Saved — triggering staging deploy…");
+      await triggerDeploy(token);
+      setStatus("Published! Staging rebuilds in ~30 sec.", "is-ok");
       clearStatusAfter(12000);
     } catch (err) {
       if (err.code === "auth") { clearToken(); _afterToken = function (t) { doPublish(t); }; showTokenDialog("That token did not work: " + err.message); }

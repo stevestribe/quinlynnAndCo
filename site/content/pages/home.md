@@ -3,6 +3,17 @@ title: Quinlynn & Co. — Handmade goods, stitched slowly.
 meta_description: Handmade bags and fabric goods, stitched slowly in McKinney, Texas.
 ---
 
+## labels
+
+### about
+The Artisans
+
+### products
+The Shoppe
+
+### contact
+Inquire
+
 ## hero
 
 ### title

@@ -191,8 +191,12 @@ def main():
     if about_meta_html:
         about_meta_html = '\n          ' + about_meta_html + '\n        '
 
-    # Simple inline injections
+    # Nav/section label injections (driven by ## labels in home.md)
+    labels = secs.get('labels', {})
     simple = [
+        ('label-about',    esc(labels.get('about',    ''))),
+        ('label-products', esc(labels.get('products', ''))),
+        ('label-contact',  esc(labels.get('contact',  ''))),
         ('hero-title',      md_inline(get('hero', 'title'))),
         ('hero-sub',        md_inline(get('hero', 'sub'))),
         ('about-heading',   md_inline(get('about', 'heading'))),

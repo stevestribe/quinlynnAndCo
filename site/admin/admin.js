@@ -148,6 +148,23 @@
 
   // ── Preview builder ───────────────────────────────────────────────────────
 
+  function renderLabelsPreview(subs) {
+    var rows = [
+      ['Nav · About section', subs.about    || '<em>not set</em>'],
+      ['Nav · Products section', subs.products || '<em>not set</em>'],
+      ['Nav · Contact section', subs.contact  || '<em>not set</em>'],
+    ];
+    var rowsHtml = rows.map(function (r) {
+      return '<tr><td style="padding:4px 16px 4px 0;opacity:.6">' + r[0] + '</td>' +
+             '<td style="font-weight:600">' + esc(r[1]).replace('&lt;em&gt;', '<em>').replace('&lt;/em&gt;', '</em>') + '</td></tr>';
+    }).join('');
+    return '<div class="psec">' +
+      '<div class="sec-label">Labels</div>' +
+      '<table style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;border-collapse:collapse">' +
+      rowsHtml + '</table>' +
+      '</div>';
+  }
+
   function renderHeroPreview(subs) {
     var title = mdInline(subs.title || "");
     var sub   = esc(subs.sub || "");
@@ -269,6 +286,7 @@
     var notice = '<div class="preview-notice">Content preview — layout approximated. Changes appear on staging after publishing.</div>';
 
     var body = notice +
+      renderLabelsPreview(secs.labels || {}) +
       renderHeroPreview(secs.hero || {}) +
       renderAboutPreview(secs.about || {}) +
       renderProductsPreview(secs.products || {}) +

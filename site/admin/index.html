@@ -1,89 +1,80 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Content Editor — Quinlynn &amp; Co. (Staging)</title>
-    <meta name="robots" content="noindex, nofollow">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Manrope:wght@300;400;500;600&display=swap">
-    <link rel="stylesheet" href="/css/styles.css">
-    <link rel="stylesheet" href="admin.css">
-  </head>
-  <body class="admin-body">
-    <header class="admin-header" role="banner">
-      <div class="admin-header-inner">
-        <div class="admin-brand">
-          <a href="/" class="admin-site-link" aria-label="View site home">Quinlynn &amp; Co.</a>
-          <span class="admin-env-badge">Staging Editor</span>
-        </div>
-        <div class="admin-controls">
-          <label class="admin-page-label" for="page-select">Page</label>
-          <select id="page-select" class="admin-page-select" aria-label="Select page to edit">
-            <option value="home">Home</option>
-          </select>
-          <button id="download-btn" class="admin-btn" type="button">
-            Download .md
-          </button>
-          <button id="publish-btn" class="admin-btn admin-btn-primary" type="button">
-            Publish to Staging
-          </button>
-          <a id="view-live-btn" class="admin-btn" href="https://staging.quinlynnandco.com/" target="_blank" rel="noopener">
-            View Live
-          </a>
-          <span id="status-msg" class="admin-status" aria-live="polite"></span>
-        </div>
-      </div>
-    </header>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Staging Editor — Quinlynn &amp; Co.</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
 
-    <div class="admin-notice" role="note">
-      <strong>Publish to Staging</strong> commits your changes to GitHub and rebuilds the staging site automatically
-      (allow ~2 minutes). <strong>Download .md</strong> saves a local copy only. Do not modify the <code>## section</code> or <code>### subsection</code> headings — edit only the content below them.
+<header class="adm-bar">
+  <div class="adm-brand">
+    <span class="adm-brand-name">Quinlynn &amp; Co.</span>
+    <span class="adm-badge">Staging Editor</span>
+  </div>
+
+  <div class="adm-dirty-msg" id="adm-dirty-msg" hidden>
+    <span class="adm-dirty-dot" aria-hidden="true"></span>
+    <span id="adm-dirty-label">Unsaved changes</span>
+  </div>
+
+  <div class="adm-actions">
+    <span class="adm-status" id="adm-status" aria-live="polite"></span>
+    <a class="adm-btn" id="adm-view-live" href="https://staging.quinlynnandco.com/" target="_blank" rel="noopener">View live</a>
+    <button class="adm-btn adm-btn-primary" id="adm-publish" disabled>Publish to staging</button>
+  </div>
+</header>
+
+<div class="adm-workspace">
+  <iframe id="adm-frame" title="Site preview"></iframe>
+  <div class="adm-frame-overlay" id="adm-frame-overlay" hidden></div>
+</div>
+
+<!-- Edit panel -->
+<aside class="adm-panel" id="adm-panel" aria-hidden="true" aria-label="Edit section">
+  <div class="adm-panel-head">
+    <div class="adm-panel-title-row">
+      <h2 class="adm-panel-title" id="adm-panel-title"></h2>
+      <span class="adm-panel-edited" id="adm-panel-edited" hidden>edited</span>
     </div>
+    <button class="adm-icon-btn" id="adm-panel-close" aria-label="Close without saving">
+      <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 8l16 16M24 8L8 24"/></svg>
+    </button>
+  </div>
+  <div class="adm-panel-body" id="adm-panel-body"></div>
+  <div class="adm-panel-foot">
+    <button class="adm-btn adm-btn-ghost" id="adm-revert">Revert section</button>
+    <button class="adm-btn adm-btn-primary" id="adm-done">Done</button>
+  </div>
+</aside>
 
-    <div class="admin-workspace" id="workspace">
-      <div class="admin-pane admin-pane-editor">
-        <div class="admin-pane-label" aria-hidden="true">Markdown</div>
-        <textarea id="md-editor" class="admin-editor" spellcheck="true" aria-label="Markdown source editor"
-          placeholder="Loading content…"></textarea>
-      </div>
-      <div class="admin-divider" aria-hidden="true"></div>
-      <div class="admin-pane admin-pane-preview">
-        <div class="admin-pane-label" aria-hidden="true">Preview</div>
-        <iframe id="preview-frame" class="admin-preview-frame" title="Rendered preview"
-          sandbox="allow-same-origin"></iframe>
-      </div>
+<!-- GitHub token dialog -->
+<dialog class="adm-dialog" id="token-dialog" aria-labelledby="token-dialog-title">
+  <form id="token-form" method="dialog">
+    <h2 class="adm-dialog-title" id="token-dialog-title">Connect to GitHub</h2>
+    <p class="adm-dialog-body">
+      Enter your GitHub access token to load and publish content.
+      Stored in this browser session only — never sent anywhere else.
+    </p>
+    <label class="adm-field-label">
+      GitHub Token
+      <input id="token-input" class="adm-input" type="password"
+        autocomplete="off" spellcheck="false" placeholder="github_pat_…" />
+    </label>
+    <p class="adm-dialog-hint">
+      Fine-grained token with <em>Contents: Read and write</em> and
+      <em>Actions: Read and write</em> on this repository.
+    </p>
+    <div class="adm-dialog-error" id="token-error" hidden></div>
+    <div class="adm-dialog-actions">
+      <button type="button" id="token-cancel-btn" class="adm-btn">Cancel</button>
+      <button type="submit" class="adm-btn adm-btn-primary">Connect</button>
     </div>
+  </form>
+</dialog>
 
-    <!-- Token dialog -->
-    <dialog id="token-dialog" class="admin-dialog" aria-labelledby="token-dialog-title">
-      <form id="token-form" class="admin-dialog-form" method="dialog">
-        <h2 id="token-dialog-title" class="admin-dialog-title">Connect to GitHub</h2>
-        <p class="admin-dialog-body">
-          Enter your GitHub access token to publish changes directly to staging.
-          The token is kept in your browser session only — it is never stored in the site.
-        </p>
-        <label class="admin-field">
-          GitHub Token
-          <input id="token-input" type="password" class="admin-field-input"
-            autocomplete="off" spellcheck="false" placeholder="github_pat_…">
-        </label>
-        <p class="admin-dialog-hint">
-          Need a token? Ask your developer for a fine-grained personal access token
-          with <em>Contents: Read and write</em> and <em>Actions: Read and write</em>
-          permissions on this repository.
-        </p>
-        <div id="token-error" class="admin-dialog-error" hidden></div>
-        <div class="admin-dialog-actions">
-          <button type="button" id="token-cancel-btn" class="admin-btn">Cancel</button>
-          <button type="submit" id="token-submit-btn" class="admin-btn admin-btn-primary">
-            Connect &amp; Publish
-          </button>
-        </div>
-      </form>
-    </dialog>
-
-    <script src="admin.js" defer></script>
-  </body>
+<script src="admin.js" defer></script>
+</body>
 </html>

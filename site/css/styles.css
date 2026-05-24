@@ -138,7 +138,7 @@ section {
   color: var(--charcoal);
   border-color: rgba(47, 47, 47, 0.35);
 }
-.btn-ghost:hover { background: var(--charcoal); border-color: var(--charcoal); color: var(--ivory); }
+.btn-ghost:hover { background: var(--sage-deep); border-color: var(--sage-deep); color: var(--ivory); }
 .btn-link {
   display: inline-flex;
   align-items: center;
@@ -276,7 +276,7 @@ body[data-ornaments="off"] .ornament { display: none; }
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ivory);
-  background: var(--charcoal);
+  background: var(--sage);
   padding: 11px 18px;
   text-decoration: none;
   transition: background .35s var(--ease);

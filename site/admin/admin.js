@@ -355,7 +355,7 @@
     var f   = FIELDS[key] || {};
     return '<button class="' + cls + '" data-qc-key="' + key + '" ' +
       'aria-label="Edit ' + (f.label || key) + '" ' +
-      'onclick="event.preventDefault();qcEdit(\'' + key + '\',this)">' +
+      'onclick="event.preventDefault();event.stopPropagation();qcEdit(\'' + key + '\',this)">' +
       PENCIL_SVG + '</button>';
   }
 
@@ -546,7 +546,7 @@
     popupHint.textContent  = f.hint || (f.type !== 'input' ? 'Markdown: *italic*, **bold**' : '');
     popupBody.innerHTML    = buildPopupBody(fieldKey, value);
 
-    popup.hidden = false;
+    popup.classList.add('is-open');
     positionPopup(rect);
     attachLiveListeners();
 
@@ -562,7 +562,7 @@
     var key = activeKey;
     activeKey = null;
     popupPrev = null;
-    popup.hidden = true;
+    popup.classList.remove('is-open');
     frameOver.hidden = true;
     // Update pencil dirty state in iframe
     sendPencilState(key);
@@ -579,7 +579,7 @@
     }
     activeKey = null;
     popupPrev = null;
-    popup.hidden = true;
+    popup.classList.remove('is-open');
     frameOver.hidden = true;
   }
 
@@ -759,7 +759,7 @@
     if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); confirmPopup(); }
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !popup.hidden) cancelPopup();
+    if (e.key === 'Escape' && popup.classList.contains('is-open')) cancelPopup();
   });
 
   publishBtn.addEventListener('click', function () {

@@ -200,8 +200,11 @@ html, body {
   border: 1px solid var(--adm-border);
   border-radius: 7px;
   box-shadow: 0 10px 32px rgba(47, 47, 47, 0.14), 0 2px 6px rgba(47, 47, 47, 0.07);
-  display: flex;
+  display: none;
   flex-direction: column;
+}
+.adm-popup.is-open {
+  display: flex;
   animation: adm-popup-in 0.14s ease;
 }
 

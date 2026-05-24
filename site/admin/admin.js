@@ -231,10 +231,9 @@
         '          <div class="pcard-img"><div class="' + phCls + '">' +
         (cd.tag ? '<span class="ph-tag">' + esc(cd.tag) + '</span>' : '') + '</div></div>\n' +
         '          <div class="pcard-meta">\n' +
-        '            <div class="pcard-name">' + esc(cd.name) + '</div>\n' +
+        '            <div class="pcard-name">' + esc(cd.name) + '<!-- QC-PENCIL:card' + (i + 1) + ' --></div>\n' +
         '            <div class="pcard-price">' + esc(cd.price) + '</div>\n' +
         (cd.desc ? '            <p class="pcard-desc">' + esc(cd.desc) + '</p>\n' : '') +
-        '            <!-- QC-PENCIL:card' + (i + 1) + ' -->\n' +
         '            <span class="pcard-cta">View on Etsy\n              ' + ARROW_SVG + '\n            </span>\n' +
         '          </div>\n        </a>\n'
       );
@@ -297,14 +296,14 @@
     /* Pencil buttons */
     '.qc-pencil{display:inline-flex;align-items:center;justify-content:center;' +
     'width:17px;height:17px;margin-left:5px;padding:0;' +
-    'background:rgba(110,130,110,0.45);color:#fff;border:none;border-radius:3px;' +
-    'cursor:pointer;opacity:0.25;vertical-align:middle;' +
+    'background:rgba(85,102,85,0.65);color:#fff;border:none;border-radius:3px;' +
+    'cursor:pointer;opacity:0.55;vertical-align:middle;' +
     'pointer-events:auto!important;' +
     'transition:opacity .18s,background .18s;flex-shrink:0;}' +
     '.qc-pencil.qc-pencil-block{display:block;margin:6px 0 0;}' +
-    '.qc-pencil:hover{opacity:1!important;background:rgba(85,102,85,.9);}' +
-    '.qc-pencil.is-dirty{opacity:0.75;outline:2px solid rgba(90,138,90,.55);outline-offset:2px;}' +
-    '*:hover>.qc-pencil{opacity:0.7;}' +
+    '.qc-pencil:hover{opacity:1!important;background:rgba(85,102,85,0.95);}' +
+    '.qc-pencil.is-dirty{opacity:0.8;outline:2px solid rgba(90,138,90,.55);outline-offset:2px;}' +
+    '*:hover>.qc-pencil{opacity:0.8;}' +
     /* Hide all pencils when body has no-pencils class */
     'body.no-pencils .qc-pencil{display:none!important;}' +
     /* Block external nav/form interaction in preview */
@@ -387,11 +386,11 @@
       '$1' + pencilBtn('about-meta', 'qc-pencil-block')
     );
 
-    // Per-card pencils — placed in pcard-meta by renderCards placeholder
+    // Per-card pencils — inline after product name
     for (var i = 1; i <= 6; i++) {
       var key = 'card' + i;
       if (!FIELDS[key]) continue;
-      html = html.replace('<!-- QC-PENCIL:' + key + ' -->', pencilBtn(key, 'qc-pencil-block'));
+      html = html.replace('<!-- QC-PENCIL:' + key + ' -->', pencilBtn(key));
     }
 
     // Apply pencil visibility state

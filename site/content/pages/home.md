@@ -73,33 +73,19 @@ Slim profile, adjustable strap, slip pocket.
 Bound Journal Sleeve | $58 | sleeve · journal
 Made to fit a standard hardcover notebook.
 
-## custom
+## inquire
 
 ### heading
 Made *once*, made for you.
 
 ### lede
-Custom inquiries are welcomed in small numbers each season, and treated with the same patient attention as everything else in the studio.
+A short note is plenty. Tell me what you have in mind — a shape, a use, fabrics you love — and I'll write back with materials, timing, and a quote.
 
-### step1
-Share your idea
-Tell me what you have in mind — a shape, a use, a size, a piece you've seen and loved. A short note is plenty to start.
+### thanks-h
+Thanks for dropping me *a note.*
 
-### step2
-Discuss fabrics & details
-We'll choose materials, lining, hardware, and finish together. I'll send a short summary and a fair timeline.
-
-### step3
-Receive a handmade piece
-Your piece is cut, sewn, and pressed slowly, then sent wrapped in cotton. Made once, made for you.
-
-## contact
-
-### heading
-Start a *custom order.*
-
-### body
-A short note is plenty — share what you have in mind and I'll write back with materials, timing, and a fair price. Two to three days, usually.
+### thanks-p
+I'll be in touch soon — usually within two or three days.
 
 ## footer
 

@@ -26,21 +26,6 @@ _ARROW_SVG = (
     '<path d="M6 16h20M19 9l7 7-7 7" /></svg>'
 )
 
-_STEP_SVGS = [
-    ('<svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" '
-     'stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">'
-     '<rect x="5" y="9" width="22" height="15" rx="0.5" />'
-     '<path d="M5 10l11 8 11-8" /></svg>'),
-    ('<svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" '
-     'stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">'
-     '<rect x="4" y="7" width="16" height="16" rx="0.5" />'
-     '<rect x="12" y="13" width="16" height="12" rx="0.5" /></svg>'),
-    ('<svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" '
-     'stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">'
-     '<path d="M7 12h18l-1.5 14.5a1 1 0 0 1-1 .9H9.5a1 1 0 0 1-1-.9L7 12z" />'
-     '<path d="M11 12V9a5 5 0 0 1 10 0v3" /></svg>'),
-]
-
 _CARD_COLORS = ['warm', 'sage', '', 'taupe', 'deep', 'warm']
 
 # ── Parsing ───────────────────────────────────────────────────────────────
@@ -124,37 +109,6 @@ def render_product_cards(secs):
     return ''.join(parts)
 
 
-# ── Custom steps ──────────────────────────────────────────────────────────
-
-def render_custom_steps(secs):
-    """Generate HTML for the three custom order steps."""
-    parts = []
-    for idx in range(3):
-        key  = f'step{idx + 1}'
-        text = secs.get(key, '')
-        if not text:
-            continue
-        lines = [l.strip() for l in text.split('\n') if l.strip()]
-        title   = lines[0] if lines else ''
-        body    = ' '.join(lines[1:]) if len(lines) > 1 else ''
-        num     = f'Step {idx + 1:02d}'
-        svg     = _STEP_SVGS[idx] if idx < len(_STEP_SVGS) else ''
-        delay   = idx + 1
-        conn    = '<div class="step-connector" aria-hidden="true"></div>' if idx < 2 else ''
-        parts.append(
-            f'\n      <div class="step reveal" data-delay="{delay}">\n'
-            f'        <div class="step-top">\n'
-            f'          <span class="step-num">{num}</span>\n'
-            f'          <span class="step-icon" aria-hidden="true">{svg}</span>\n'
-            f'        </div>\n'
-            f'        <div class="step-title">{esc(title)}</div>\n'
-            f'        <p class="step-body">{esc(body)}</p>\n'
-            f'        {conn}\n'
-            f'      </div>\n'
-        )
-    return ''.join(parts)
-
-
 # ── Injection ─────────────────────────────────────────────────────────────
 
 def inject(html, key, inner):
@@ -206,10 +160,10 @@ def main():
         ('about-sign',      md_inline(get('about', 'sign'))),
         ('about-meta',      about_meta_html),
         ('products-heading', md_inline(get('products', 'heading'))),
-        ('custom-heading',  md_inline(get('custom', 'heading'))),
-        ('custom-lede',     md_inline(get('custom', 'lede'))),
-        ('contact-heading', md_inline(get('contact', 'heading'))),
-        ('contact-body',    md_inline(get('contact', 'body'))),
+        ('inquire-heading',   md_inline(get('inquire', 'heading'))),
+        ('inquire-lede',      md_inline(get('inquire', 'lede'))),
+        ('inquire-thanks-h',  md_inline(get('inquire', 'thanks-h'))),
+        ('inquire-thanks-p',  esc(get('inquire', 'thanks-p'))),
         ('footer-tagline',  md_inline(get('footer', 'tagline'))),
     ]
     for key, value in simple:
@@ -220,10 +174,6 @@ def main():
     products_html = render_product_cards(secs.get('products', {}))
     if products_html:
         html = inject(html, 'products-cards', products_html)
-
-    steps_html = render_custom_steps(secs.get('custom', {}))
-    if steps_html:
-        html = inject(html, 'custom-steps', steps_html)
 
     INDEX_FILE.write_text(html, encoding='utf-8')
     print('Build complete: site/index.html updated.')

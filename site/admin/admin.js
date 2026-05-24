@@ -119,12 +119,6 @@
 
   var ARROW_SVG = '<svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16h20M19 9l7 7-7 7" /></svg>';
 
-  var STEP_SVGS = [
-    '<svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="22" height="15" rx="0.5" /><path d="M5 10l11 8 11-8" /></svg>',
-    '<svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="16" rx="0.5" /><rect x="12" y="13" width="16" height="12" rx="0.5" /></svg>',
-    '<svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12h18l-1.5 14.5a1 1 0 0 1-1 .9H9.5a1 1 0 0 1-1-.9L7 12z" /><path d="M11 12V9a5 5 0 0 1 10 0v3" /></svg>',
-  ];
-
   var CARD_PH_CLASSES = ['warm', 'sage', '', 'taupe', 'deep', 'warm'];
 
   // ── Preview CSS (minimal overrides on top of /css/styles.css) ────────────
@@ -230,45 +224,24 @@
       '</div>';
   }
 
-  function renderCustomPreview(subs) {
-    var heading = mdInline(subs.heading || "");
-    var lede    = esc(subs.lede || "");
-    var steps   = '';
-    for (var i = 1; i <= 3; i++) {
-      var text  = subs['step' + i] || '';
-      if (!text) continue;
-      var lines = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
-      var title = esc(lines[0] || '');
-      var body  = esc(lines.slice(1).join(' '));
-      var svg   = STEP_SVGS[i - 1] || '';
-      steps += '<div class="step">' +
-        '<div class="step-top">' +
-        '<span class="step-num">Step 0' + i + '</span>' +
-        '<span class="step-icon" aria-hidden="true">' + svg + '</span>' +
-        '</div>' +
-        '<div class="step-title">' + title + '</div>' +
-        (body ? '<p class="step-body">' + body + '</p>' : '') +
-        '</div>';
-    }
+  function renderInquirePreview(subs) {
+    var heading  = mdInline(subs.heading   || "");
+    var lede     = esc(subs.lede       || "");
+    var thanksH  = mdInline(subs['thanks-h'] || "");
+    var thanksP  = esc(subs['thanks-p']  || "");
     return '<div class="psec">' +
-      '<div class="sec-label">Custom Orders</div>' +
-      '<div style="text-align:center;margin-bottom:1.5rem">' +
+      '<div class="sec-label">Inquire</div>' +
+      '<div style="text-align:center">' +
       (heading ? '<h2 class="h-section">' + heading + '</h2>' : '') +
-      (lede ? '<p class="lede" style="max-width:56ch;margin:.75rem auto 0">' + lede + '</p>' : '') +
+      (lede    ? '<p class="lede" style="max-width:48ch;margin:.75rem auto 0">' + lede + '</p>' : '') +
       '</div>' +
-      (steps ? '<div class="cust-grid">' + steps + '</div>' : '') +
-      '</div>';
-  }
-
-  function renderContactPreview(subs) {
-    var heading = mdInline(subs.heading || "");
-    var body    = esc(subs.body || "");
-    return '<div class="psec">' +
-      '<div class="sec-label">Contact</div>' +
-      '<div style="max-width:380px">' +
-      (heading ? '<h2 class="h-section">' + heading + '</h2>' : '') +
-      (body    ? '<p class="body" style="margin-top:.75rem">' + body + '</p>' : '') +
-      '</div>' +
+      (thanksH || thanksP
+        ? '<div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--hairline-soft);text-align:center">' +
+          '<p style="font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(47,47,47,.5);margin-bottom:.75rem">Thank-you message</p>' +
+          (thanksH ? '<h3 class="thanks-h" style="font-size:1.4rem">' + thanksH + '</h3>' : '') +
+          (thanksP ? '<p class="thanks-p">' + thanksP + '</p>' : '') +
+          '</div>'
+        : '') +
       '</div>';
   }
 
@@ -290,8 +263,7 @@
       renderHeroPreview(secs.hero || {}) +
       renderAboutPreview(secs.about || {}) +
       renderProductsPreview(secs.products || {}) +
-      renderCustomPreview(secs.custom || {}) +
-      renderContactPreview(secs.contact || {}) +
+      renderInquirePreview(secs.inquire || {}) +
       renderFooterPreview(secs.footer || {});
 
     return '<!doctype html><html lang="en"><head>' +

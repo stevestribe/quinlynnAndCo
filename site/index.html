@@ -3,425 +3,324 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="description" content="Quinlynn &amp; Co. — Handmade bags and fabric goods, stitched slowly in McKinney, Texas." />
-<title>Quinlynn &amp; Co. — Handmade goods, stitched slowly.</title>
+<title>Quinlynn &amp; Co. — Coming Soon</title>
+<meta name="description" content="Quinlynn & Co. — a mother-daughter studio in McKinney, Texas making heirloom-quality fabric goods. New site coming soon. Recent small-batch drops are listed on Etsy." />
+<meta name="robots" content="noindex" />
+
+<!-- Open Graph -->
+<meta property="og:title" content="Quinlynn & Co. — Coming Soon" />
+<meta property="og:description" content="Heirloom-quality fabric goods, handmade to be used and kept. Our new home is on its way — find recent drops on Etsy." />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="https://quinlynnandco.com/assets/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Quinlynn & Co. — A new home for our heirloom goods, in the making." />
+<meta name="twitter:card" content="summary_large_image" />
+
+<link rel="icon" href="assets/quinlynn-q.png" type="image/png" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Manrope:wght@300;400;500;600&display=swap" />
-<link rel="stylesheet" href="css/styles.css?v=2" />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=Manrope:wght@300;400;500;600&display=swap"
+/>
+
+<style>
+  :root {
+    --sage:        #8B9D8B;
+    --sage-deep:   #6E826E;
+    --cream:       #F2EEE7;          /* page bg — slightly warmer cream */
+    --frame:       #FAF8F4;          /* card bg — ivory */
+    --charcoal:    #2F2F2F;
+    --hairline-soft: rgba(47, 47, 47, 0.07);
+
+    --serif: "Playfair Display", Georgia, serif;
+    --sans:  "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+    --ease: cubic-bezier(.22,.61,.36,1);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--charcoal);
+    font-family: var(--sans);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* ── Type ────────────────────────────────────────────── */
+  .eyebrow {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--charcoal);
+  }
+  .h-display {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(34px, 5.4vw, 64px);
+    line-height: 1.08;
+    letter-spacing: -0.012em;
+    text-wrap: balance;
+    margin: 0;
+    text-align: center;
+  }
+  .h-display em { font-style: italic; font-weight: 500; color: var(--sage-deep); }
+  .lede {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(17px, 1.55vw, 21px);
+    line-height: 1.55;
+    color: #4a4a4a;
+    text-wrap: pretty;
+    margin: 0;
+    text-align: center;
+  }
+
+  /* ── Page scaffold ───────────────────────────────────── */
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(20px, 3.5vw, 40px);
+    background: var(--cream);
+  }
+  .stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(24px, 4vw, 56px) 0;
+  }
+
+  /* ── The framed card ─────────────────────────────────── */
+  .card {
+    position: relative;
+    width: 100%;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: clamp(48px, 7vw, 112px) clamp(28px, 6vw, 96px);
+    background: var(--frame);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(24px, 2.6vw, 36px);
+    box-shadow:
+      0 1px 1px rgba(58, 53, 44, 0.02),
+      0 2px 4px rgba(58, 53, 44, 0.025),
+      0 8px 16px rgba(58, 53, 44, 0.025),
+      0 24px 40px rgba(58, 53, 44, 0.03),
+      0 48px 80px rgba(58, 53, 44, 0.025);
+  }
+
+  /* ── Wordmark ────────────────────────────────────────── */
+  .logo {
+    width: min(640px, 78vw);
+    height: auto;
+    display: block;
+    margin: clamp(4px, 0.5vw, 8px) 0 clamp(2px, 0.6vw, 8px);
+  }
+
+  /* ── Ornament — sage hairline + diamond ──────────────── */
+  .ornament {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--sage);
+    margin-top: clamp(6px, 1vw, 12px);
+  }
+  .ornament .ln {
+    display: block;
+    width: 64px;
+    height: 1px;
+    background: var(--sage);
+    opacity: .6;
+  }
+  .ornament .dot {
+    width: 6px;
+    height: 6px;
+    background: var(--sage);
+    transform: rotate(45deg);
+  }
+
+  /* ── Headline + sub ──────────────────────────────────── */
+  .title { max-width: 880px; }
+  .sub   { max-width: 560px; }
+
+  /* ── Buttons ─────────────────────────────────────────── */
+  .ctas {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: clamp(10px, 2vw, 20px);
+  }
+  .btn {
+    --bg: var(--sage);
+    --fg: #fff;
+    --bd: var(--sage);
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 32px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--fg);
+    background: var(--bg);
+    border: 1px solid var(--bd);
+    border-radius: 0;
+    cursor: pointer;
+    transition: background .4s var(--ease), color .4s var(--ease),
+                border-color .4s var(--ease), letter-spacing .4s var(--ease);
+  }
+  .btn:hover {
+    background: var(--sage-deep);
+    border-color: var(--sage-deep);
+    letter-spacing: 0.22em;
+  }
+  .btn svg { transition: transform .4s var(--ease); }
+  .btn:hover svg { transform: translateX(4px); }
+
+  .btn-ghost {
+    --bg: transparent;
+    --fg: var(--charcoal);
+    --bd: rgba(47,47,47,0.32);
+  }
+  .btn-ghost:hover {
+    background: var(--charcoal);
+    border-color: var(--charcoal);
+    color: var(--frame);
+  }
+
+  /* ── Page footer (outside the card) ──────────────────── */
+  .pagefoot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: clamp(18px, 2.5vw, 28px) clamp(4px, 1vw, 16px) 0;
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(47, 47, 47, 0.5);
+  }
+  .pagefoot a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 1px;
+    transition: color .3s var(--ease), border-color .3s var(--ease);
+  }
+  .pagefoot a:hover { color: var(--sage-deep); border-color: var(--sage-deep); }
+  @media (max-width: 620px) {
+    .pagefoot { flex-direction: column; gap: 8px; text-align: center; }
+  }
+
+  /* ── Reveal on load ──────────────────────────────────── */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity 1s var(--ease), transform 1s var(--ease); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+  .reveal[data-delay="1"] { transition-delay: .10s; }
+  .reveal[data-delay="2"] { transition-delay: .22s; }
+  .reveal[data-delay="3"] { transition-delay: .34s; }
+  .reveal[data-delay="4"] { transition-delay: .46s; }
+  .reveal[data-delay="5"] { transition-delay: .58s; }
+</style>
+<noscript><style>.reveal { opacity: 1; transform: none; }</style></noscript>
 </head>
-<body data-density="compact" data-ornaments="on">
+<body>
+  <div class="page">
+    <main class="stage">
+      <section class="card" aria-label="Quinlynn & Co. — Coming Soon">
 
-<!-- Sticky CTA pill -->
-<a class="sticky-cta" href="#contact" id="sticky-cta">
-  Start a Custom Order
-  <span class="pill-arrow">
-    <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M6 16h20M19 9l7 7-7 7" />
-    </svg>
-  </span>
-</a>
+        <span class="eyebrow reveal" data-delay="1">McKinney, Texas · Coming Soon</span>
 
-<!-- Navigation -->
-<header class="nav" id="site-nav">
-  <div class="nav-inner">
-    <a href="#top" class="brand" aria-label="Quinlynn &amp; Co. — home">
-      <img src="assets/quinlynn-wordmark.png" alt="Quinlynn &amp; Co." />
-    </a>
-    <nav class="nav-links" aria-label="Primary">
-      <a href="#about"><!-- QC:label-about -->The Artisans<!-- /QC:label-about --></a>
-      <a href="#products"><!-- QC:label-products -->The Shoppe<!-- /QC:label-products --></a>
-      <a href="#contact"><!-- QC:label-contact -->Inquire<!-- /QC:label-contact --></a>
-    </nav>
-    <a class="nav-cta" href="#contact">Custom Orders</a>
-    <button class="menu-btn" aria-label="Open menu" id="menu-open">
-      <svg width="26" height="26" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M6 11h20M6 21h20" />
-      </svg>
-    </button>
-  </div>
-</header>
+        <img
+          class="logo reveal"
+          data-delay="2"
+          src="assets/quinlynn-logo.png?v=1"
+          alt="Quinlynn & Co. — Est. 2023"
+        />
 
-<!-- Mobile drawer -->
-<div class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-label="Navigation menu">
-  <div class="drawer-top">
-    <span class="brand">
-      <img src="assets/quinlynn-wordmark.png" alt="Quinlynn &amp; Co." />
-    </span>
-    <button class="menu-btn" aria-label="Close menu" id="menu-close">
-      <svg width="24" height="24" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M8 8l16 16M24 8L8 24" />
-      </svg>
-    </button>
-  </div>
-  <div class="drawer-body">
-    <a href="#about" class="drawer-link"><em>01</em>&nbsp;&nbsp;<!-- QC:label-about -->The Artisans<!-- /QC:label-about --></a>
-    <a href="#products" class="drawer-link"><em>02</em>&nbsp;&nbsp;<!-- QC:label-products -->The Shoppe<!-- /QC:label-products --></a>
-    <a href="#contact" class="drawer-link"><em>03</em>&nbsp;&nbsp;<!-- QC:label-contact -->Inquire<!-- /QC:label-contact --></a>
-  </div>
-  <div class="drawer-foot">
-    <a class="btn" href="#contact">Start a Custom Order</a>
-    <a class="btn btn-ghost" href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">Shop on Etsy</a>
-  </div>
-</div>
-
-<main>
-
-  <!-- ── Hero ── -->
-  <section id="top" aria-label="Hero">
-    <div class="hero">
-      <div class="hero-frame" id="hero-frame">
-        <span class="eyebrow hero-eyebrow reveal">mckinney, texas</span>
-        <img src="assets/quinlynn-logo.png" alt="Quinlynn &amp; Co. — est. 2023" class="hero-logo reveal" data-delay="1" />
-        <div class="hero-ornament reveal" data-delay="1" aria-hidden="true">
+        <div class="ornament reveal" data-delay="2" aria-hidden="true">
           <span class="ln"></span><span class="dot"></span><span class="ln"></span>
         </div>
-        <h1 class="h-display hero-title reveal" data-delay="2"><!-- QC:hero-title -->Heirloom-quality fabric goods, <em>handmade</em> to be used and kept.<!-- /QC:hero-title --></h1>
-        <p class="lede hero-sub reveal" data-delay="3"><!-- QC:hero-sub -->Small-batch drops from a mother-daughter studio, beautifully sewn with careful attention to details.<!-- /QC:hero-sub --></p>
-        <div class="hero-ctas reveal" data-delay="3">
-          <a class="btn" href="#contact">Custom Orders</a>
-          <a class="btn btn-ghost" href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">Shop on Etsy</a>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- ── About ── -->
-  <section id="about">
-    <div class="about-wrap">
-      <aside class="about-aside reveal">
-        <div class="about-ph">
-          <img src="assets/Ashley_headshot.png" alt="Ashley — the maker behind Quinlynn &amp; Co." class="about-ph-img" />
-        </div>
-        <div class="about-aside-meta"><!-- QC:about-meta -->
-          <div>Studio · home, McKinney, TX</div>
-          <div>Practice · est. 2023</div>
-          <div>Mother of six</div>
-        <!-- /QC:about-meta -->
-        </div>
-      </aside>
-      <div class="about-body">
-        <span class="eyebrow reveal"><!-- QC:label-about -->The Artisans<!-- /QC:label-about --></span>
-        <h2 class="h-section reveal" data-delay="1"><!-- QC:about-heading -->A quiet practice, measured in <em>well-made things.</em><!-- /QC:about-heading --></h2>
-        <p class="body reveal" data-delay="1"><!-- QC:about-bio1 -->Quinlynn &amp; Co. is the work of a single pair of hands — Ashley's. A homemaker, a mother of six, and a maker who has spent years turning still evenings into objects made with care. Bags lined in linen. Pouches finished by hand. Pieces meant to be used, and used for a long time.<!-- /QC:about-bio1 --></p>
-        <blockquote class="about-quote reveal" data-delay="2"><!-- QC:about-quote -->”I'd rather finish one thing well than ten things quickly. Everything in this studio leaves only when it would meet my own table.”<!-- /QC:about-quote --></blockquote>
-        <p class="body reveal" data-delay="2"><!-- QC:about-bio2 -->Each piece is cut, sewn, and pressed slowly — often over several mornings. Materials are chosen for how they age: linen that softens, cotton that drapes, thread that disappears into the seam. Custom work is welcomed, and treated with the same patient attention.<!-- /QC:about-bio2 --></p>
-        <div class="about-sign reveal" data-delay="3"><!-- QC:about-sign -->— Ashley<!-- /QC:about-sign --></div>
-      </div>
-    </div>
-  </section>
+        <h1 class="h-display title reveal" data-delay="3">
+          A new home for our<br />
+          heirloom goods, <em>in the making</em>.
+        </h1>
 
-  <!-- ── Featured Products ── -->
-  <section id="products" class="section-cream">
-    <div class="prod-head reveal">
-      <div>
-        <span class="eyebrow"><!-- QC:label-products -->The Shoppe<!-- /QC:label-products --></span>
-        <h2 class="h-section" style="margin-top:14px"><!-- QC:products-heading -->A small <em>edit</em> of recent work, finished this season.<!-- /QC:products-heading --></h2>
-      </div>
-      <div class="prod-controls" role="group" aria-label="Carousel controls">
-        <button class="pc-btn" id="prod-prev" aria-label="Previous products" disabled>
-          <svg width="18" height="18" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M26 16H6M13 9L6 16l7 7" />
-          </svg>
-        </button>
-        <button class="pc-btn" id="prod-next" aria-label="Next products">
-          <svg width="18" height="18" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M6 16h20M19 9l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-    </div>
+        <p class="lede sub reveal" data-delay="4">
+          The full studio site is on its way. In the meantime,
+          recent small-batch drops are listed on Etsy.
+        </p>
 
-    <div class="prod-track-wrap reveal" data-delay="1">
-      <div class="prod-track" id="prod-track"><!-- QC:products-cards -->
-        <a class="pcard" href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">
-          <div class="pcard-img"><div class="ph warm inner"><span class="ph-tag">tote · in-studio</span></div></div>
-          <div class="pcard-meta">
-            <div class="pcard-name">Linen Field Tote</div>
-            <div class="pcard-price">$148</div>
-            <p class="pcard-desc">Heavyweight natural linen, cotton-canvas lining.</p>
-            <span class="pcard-cta">View on Etsy
-              <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16h20M19 9l7 7-7 7" /></svg>
-            </span>
-          </div>
-        </a>
-
-        <a class="pcard" href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">
-          <div class="pcard-img"><div class="ph sage inner"><span class="ph-tag">crescent · sage</span></div></div>
-          <div class="pcard-meta">
-            <div class="pcard-name">Soft Crescent Bag</div>
-            <div class="pcard-price">$96</div>
-            <p class="pcard-desc">Hand-finished sage cotton with leather-look strap.</p>
-            <span class="pcard-cta">View on Etsy
-              <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16h20M19 9l7 7-7 7" /></svg>
-            </span>
-          </div>
-        </a>
-
-        <a class="pcard" href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">
-          <div class="pcard-img"><div class="ph inner"><span class="ph-tag">pouch · ivory</span></div></div>
-          <div class="pcard-meta">
-            <div class="pcard-name">Everyday Pouch</div>
-            <div class="pcard-price">$42</div>
-            <p class="pcard-desc">Brass zip, raw-edge linen, fully lined.</p>
-            <span class="pcard-cta">View on Etsy
-              <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16h20M19 9l7 7-7 7" /></svg>
-            </span>
-          </div>
-        </a>
-
-        <a class="pcard" href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">
-          <div class="pcard-img"><div class="ph taupe inner"><span class="ph-tag">carryall · taupe</span></div></div>
-          <div class="pcard-meta">
-            <div class="pcard-name">Quilted Market Carryall</div>
-            <div class="pcard-price">$184</div>
-            <p class="pcard-desc">Hand-quilted panels, generous interior.</p>
-            <span class="pcard-cta">View on Etsy
-              <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16h20M19 9l7 7-7 7" /></svg>
-            </span>
-          </div>
-        </a>
-
-        <a class="pcard" href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">
-          <div class="pcard-img"><div class="ph deep inner"><span class="ph-tag">cross-body · oat</span></div></div>
-          <div class="pcard-meta">
-            <div class="pcard-name">Petite Cross-Body</div>
-            <div class="pcard-price">$112</div>
-            <p class="pcard-desc">Slim profile, adjustable strap, slip pocket.</p>
-            <span class="pcard-cta">View on Etsy
-              <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16h20M19 9l7 7-7 7" /></svg>
-            </span>
-          </div>
-        </a>
-
-        <a class="pcard" href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">
-          <div class="pcard-img"><div class="ph warm inner"><span class="ph-tag">sleeve · journal</span></div></div>
-          <div class="pcard-meta">
-            <div class="pcard-name">Bound Journal Sleeve</div>
-            <div class="pcard-price">$58</div>
-            <p class="pcard-desc">Made to fit a standard hardcover notebook.</p>
-            <span class="pcard-cta">View on Etsy
-              <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16h20M19 9l7 7-7 7" /></svg>
-            </span>
-          </div>
-        </a>
-<!-- /QC:products-cards --></div>
-    </div>
-
-    <div class="prod-foot reveal" data-delay="2">
-      <div class="prod-dots" id="prod-dots" aria-hidden="true"></div>
-      <a class="prod-foot-link" href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">View the full shop · Etsy</a>
-    </div>
-  </section>
-
-  <!--
-  ── Inquire ─────────────────────────────────────────────────────
-  Replaces BOTH the old <#custom> and <#contact> sections.
-  Keeps id="contact" so existing nav/drawer/sticky-CTA hashes don't break.
-  (Rename to id="inquire" later if desired — see README.)
--->
-<section id="contact" class="section-cream">
-
-  <div class="inq-head reveal">
-    <span class="eyebrow"><!-- QC:label-contact -->Inquire<!-- /QC:label-contact --></span>
-    <h2 class="h-section"><!-- QC:inquire-heading -->Made <em>once</em>, made for you.<!-- /QC:inquire-heading --></h2>
-    <p class="lede" style="max-width:560px"><!-- QC:inquire-lede -->A short note is plenty. Tell me what you have in mind — a shape, a use, fabrics you love — and I'll write back with materials, timing, and a quote.<!-- /QC:inquire-lede --></p>
-    <div class="ornament" aria-hidden="true">
-      <span class="ln"></span><span class="dot"></span><span class="ln"></span>
-    </div>
-  </div>
-
-  <article class="card reveal" data-delay="1">
-    <div class="flip-inner" id="inq-flip">
-
-      <!-- ── Front face: the notecard form ─────────────────── -->
-      <div class="flip-face flip-front">
-
-        <!-- L3-style masthead -->
-        <div class="lh">
-          <span class="q-tile">
-            <img src="assets/quinlynn-q.png" alt="Q" />
-          </span>
-          <div class="stack">
-            <img class="wordmark-img" src="assets/quinlynn-wordmark.png" alt="Quinlynn &amp; Co." />
-            <span class="tagline">McKinney, Texas · Custom Inquiry · <span id="inq-stamp">Month Year</span></span>
-          </div>
-        </div>
-
-        <form id="inquiry-form" novalidate>
-          <div class="card-body">
-            <span class="greet">Dear Ashley,</span>
-
-            <p>
-              I&#x27;d love
-              <select id="f-interest" name="interest" class="blank-select" aria-label="What you have in mind" required>
-                <option value="">something handmade…</option>
-                <option value="a tote or bag">a tote or bag</option>
-                <option value="a pouch or accessory">a pouch or accessory</option>
-                <option value="a quilted or hand-finished piece">a quilted or hand-finished piece</option>
-                <option value="a gift / commission">a gift / commission</option>
-                <option value="something else — I'll describe below">something else — I&#x27;ll describe below</option>
-              </select>
-              .
-            </p>
-
-            <p>
-              Here&#x27;s what I have in mind:
-              <textarea
-                id="f-details"
-                name="details"
-                class="blank-block"
-                placeholder="size, use, fabrics you love, anything that helps you picture it…"
-                aria-label="Tell me more"
-                required
-              ></textarea>
-            </p>
-
-            <p>
-              You can reach me at
-              <input
-                id="f-email"
-                name="email"
-                type="email"
-                class="blank-input xwide"
-                placeholder="your email"
-                autocomplete="email"
-                aria-label="Your email"
-                required
-              />
-              .
-            </p>
-          </div>
-
-          <footer class="card-sign">
-            <div class="yours">
-              Yours,
-              <input
-                id="f-name"
-                name="name"
-                type="text"
-                class="sig-input"
-                placeholder="your name"
-                autocomplete="name"
-                aria-label="Your name"
-                required
-              />
-            </div>
-            <span class="attach">
-              <label for="f-file" id="f-file-label">Attach a reference image</label>
-              <input id="f-file" type="file" accept="image/*" name="reference" />
-              <span class="fname" id="file-name" hidden></span>
-            </span>
-          </footer>
-
-          <!-- Validation summary — only shown after first submit attempt.
-               JS rewrites the <b>…</b> text with the field-aware sentence. -->
-          <div class="err-summary" id="err-summary" role="alert" hidden>
-            Be sure to add <b></b> before sending Ashley a note.
-          </div>
-
-          <div class="card-foot" id="submit-row">
-            <span class="privacy">2–3 day reply · no newsletter</span>
-            <button type="submit" class="btn" id="submit-btn">
-              <span class="btn-label">Send the note</span>
-              <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M6 16h20M19 9l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        </form>
-      </div><!-- /.flip-front -->
-
-      <!-- ── Back face: thank-you message ──────────────────── -->
-      <div class="flip-face flip-back" aria-hidden="true">
-        <span class="seal">
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M6 17l6 6L26 9" />
-          </svg>
-        </span>
-        <span class="eyebrow">Thank you</span>
-        <h3 class="thanks-h"><!-- QC:inquire-thanks-h -->Thanks for dropping me <em>a note.</em><!-- /QC:inquire-thanks-h --></h3>
-        <p class="thanks-p"><!-- QC:inquire-thanks-p -->I&#x27;ll be in touch soon — usually within two or three days.<!-- /QC:inquire-thanks-p --></p>
-        <span class="thanks-sig">— Quinlynn</span>
-        <div class="thanks-actions">
-          <a class="btn-link" href="#" id="send-another" tabindex="-1">
-            Send another
-            <svg width="12" height="12" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M6 16h20M19 9l7 7-7 7" />
+        <div class="ctas reveal" data-delay="5">
+          <a
+            class="btn"
+            href="https://thewaysofherhome.etsy.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Shop Quinlynn & Co. on Etsy (opens in a new tab)"
+          >
+            Shop on Etsy
+            <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 16h20M19 9l7 7-7 7"></path>
             </svg>
           </a>
+          <a
+            class="btn btn-ghost"
+            href="mailto:hello@quinlynnandco.com?subject=Custom%20Order%20%E2%80%94%20Quinlynn%20%26%20Co."
+          >
+            Custom Orders
+          </a>
         </div>
-      </div><!-- /.flip-back -->
 
-    </div><!-- /.flip-inner -->
-  </article>
+      </section>
+    </main>
 
-  <!-- Etsy aside — sits below the notecard as a hairline-separated row -->
-  <div class="inq-aside reveal" data-delay="2">
-    <p class="copy"><!-- QC:inquire-etsy-note --><b>Rather browse first?</b> Recent and ready-to-ship pieces are listed on Etsy. The full shop updates monthly.<!-- /QC:inquire-etsy-note --></p>
-    <a class="btn-link" href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">
-      Visit the Etsy shop
-      <svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M6 16h20M19 9l7 7-7 7" />
-      </svg>
-    </a>
+    <footer class="pagefoot reveal" data-delay="5">
+      <span>© 2026 Quinlynn &amp; Co.</span>
+      <span>
+        <a href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">Etsy</a>
+        &nbsp;·&nbsp;
+        <a href="mailto:hello@quinlynnandco.com">Email</a>
+      </span>
+    </footer>
   </div>
 
-</section>
-
-</main>
-
-<!-- Footer -->
-<footer>
-  <div class="ornament dim" style="padding-top:36px" aria-hidden="true">
-    <span class="ln"></span><span class="dot"></span><span class="ln"></span>
-  </div>
-  <div class="ft-wrap">
-    <div class="ft-brand-col">
-      <a class="ft-brand" href="#top">
-        <img src="assets/quinlynn-logo.png" alt="Quinlynn &amp; Co. — est. 2023" />
-      </a>
-      <p class="ft-tag"><!-- QC:footer-tagline -->A quiet handmade boutique. Modern editorial restraint, sewn slowly, one piece at a time.<!-- /QC:footer-tagline --></p>
-    </div>
-    <div class="ft-col">
-      <h5>Shop</h5>
-      <ul>
-        <li><a href="https://thewaysofherhome.etsy.com" target="_blank" rel="noopener noreferrer">Etsy storefront</a></li>
-        <li><a href="#products"><!-- QC:label-products -->The Shoppe<!-- /QC:label-products --></a></li>
-        <li><a href="#contact">Custom orders</a></li>
-      </ul>
-    </div>
-    <div class="ft-col">
-      <h5>Studio</h5>
-      <ul>
-        <li><a href="mailto:hello@quinlynnandco.com">hello@quinlynnandco.com</a></li>
-        <li><a href="#about"><!-- QC:label-about -->The Artisans<!-- /QC:label-about --></a></li>
-        <li><a href="https://www.instagram.com/quinlynnandco" target="_blank" rel="noopener noreferrer">Instagram · @quinlynnandco</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="ft-foot">
-    <span>© 2026 Quinlynn &amp; Co. · Made by hand in McKinney, TX</span>
-    <div class="socials">
-      <a href="https://www.instagram.com/quinlynnandco" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="6" y="6" width="20" height="20" rx="5" />
-          <circle cx="16" cy="16" r="5" />
-          <circle cx="22.5" cy="9.5" r=".7" fill="currentColor" stroke="none" />
-        </svg>
-      </a>
-      <a href="mailto:hello@quinlynnandco.com" aria-label="Email">
-        <svg width="16" height="16" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="5" y="9" width="22" height="14" rx="0.5" />
-          <path d="M5 10l11 8 11-8" />
-        </svg>
-      </a>
-    </div>
-    <span>Stitched slowly · est. mmxxiii</span>
-  </div>
-</footer>
-
-<script src="js/main.js"></script>
+<script>
+  // Subtle staggered entrance — runs once on load.
+  window.addEventListener("load", () => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll(".reveal").forEach((el) => el.classList.add("in"));
+    });
+  });
+</script>
 </body>
 </html>

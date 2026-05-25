@@ -599,6 +599,7 @@
     pencilsOn = !pencilsOn;
     pencilToggle.classList.toggle('is-active', pencilsOn);
     pencilToggle.setAttribute('aria-pressed', String(pencilsOn));
+    document.getElementById('adm-pencils-label').textContent = pencilsOn ? 'Disable Editing' : 'Enable Editing';
     if (frame.contentWindow) {
       frame.contentWindow.postMessage({ type: 'qc-pencils', on: pencilsOn }, '*');
     }

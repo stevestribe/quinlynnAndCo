@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,400&family=Manrope:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="admin.css?v=4" />
+  <link rel="stylesheet" href="admin.css?v=7" />
 </head>
 <body>
 
@@ -25,9 +25,9 @@
 
   <div class="adm-actions">
     <span class="adm-status" id="adm-status" aria-live="polite"></span>
-    <button class="adm-btn adm-btn-toggle is-active" id="adm-pencils-toggle" title="Toggle edit pencils" aria-pressed="true">
-      <svg width="13" height="13" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 4l6 6L10 28H4v-6L22 4z"/></svg>
-      Pencils
+    <button class="adm-btn adm-toggle-switch is-active" id="adm-pencils-toggle" aria-pressed="true">
+      <span class="adm-toggle-track" aria-hidden="true"><span class="adm-toggle-thumb"></span></span>
+      <span id="adm-pencils-label">Disable Editing</span>
     </button>
     <a class="adm-btn" id="adm-view-live" href="https://staging.quinlynnandco.com/" target="_blank" rel="noopener">View live</a>
     <button class="adm-btn adm-btn-primary" id="adm-publish" disabled>Publish to staging</button>
@@ -79,7 +79,7 @@
   </form>
 </dialog>
 
-<script src="admin-fields.js?v=6" defer></script>
-<script src="admin.js?v=6" defer></script>
+<script src="admin-fields.js?v=7" defer></script>
+<script src="admin.js?v=7" defer></script>
 </body>
 </html>

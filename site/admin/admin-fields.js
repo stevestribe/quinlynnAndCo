@@ -86,7 +86,13 @@
   function liveUpdateCard(iframeDoc, key, item) {
     var card = iframeDoc.querySelector('[data-card-key="' + key + '"]');
     if (!card) return;
-    var n = card.querySelector('.pcard-name');  if (n) n.textContent = item.name  || '';
+    var n = card.querySelector('.pcard-name');
+    if (n) {
+      // Pencil lives inside .pcard-name; pluck it out before replacing text.
+      var pencil = n.querySelector('.qc-pencil');
+      n.textContent = item.name || '';
+      if (pencil) n.appendChild(pencil);
+    }
     var p = card.querySelector('.pcard-price'); if (p) p.textContent = item.price || '';
     var t = card.querySelector('.ph-tag');      if (t) t.textContent = item.tag   || '';
     var d = card.querySelector('.pcard-desc');  if (d) d.textContent = item.desc  || '';

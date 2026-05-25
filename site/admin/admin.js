@@ -345,6 +345,20 @@
       if (!secs[sid]) secs[sid] = {};
       for (var k in draft[sid]) secs[sid][k] = draft[sid][k];
     }
+    // Safety net: if a declared field has no value in the loaded .md and the
+    // user hasn't drafted it either, fall back to whatever the iframe is
+    // currently displaying for that field. This makes the first publish
+    // against an out-of-sync .md preserve visible content instead of
+    // blanking entire sections.
+    Object.keys(FIELDS).forEach(function (key) {
+      var f = FIELDS[key];
+      if (f.type === 'list' || !f.section || !f.sub) return;
+      if (!secs[f.section]) secs[f.section] = {};
+      if (secs[f.section][f.sub] == null || secs[f.section][f.sub] === '') {
+        var displayed = readIframeDisplayText(key);
+        if (displayed) secs[f.section][f.sub] = displayed;
+      }
+    });
     var fm    = getFrontmatter(originalMd).trimEnd();
     var parts = [fm];
     deriveOrder().forEach(function (s) {
@@ -401,16 +415,23 @@
 
   // Editor-only styles, injected into the preview iframe <head>. Generic
   // (pencil button, dirty outline, block external nav/forms) — no site CSS.
+  // Pencil color comes from ADMIN_CONFIG.pencilColor / pencilColorHover /
+  // pencilDirtyOutline so sites can match their brand inside the iframe
+  // (where the parent's CSS variables don't reach).
+  var PENCIL_BG          = CFG.pencilColor        || 'rgba(85,102,85,0.65)';
+  var PENCIL_BG_HOVER    = CFG.pencilColorHover   || 'rgba(85,102,85,0.95)';
+  var PENCIL_DIRTY_RING  = CFG.pencilDirtyOutline || 'rgba(90,138,90,.55)';
+
   var IFRAME_STYLE = (
     '.qc-pencil{display:inline-flex;align-items:center;justify-content:center;' +
     'width:17px;height:17px;margin-left:5px;padding:0;' +
-    'background:rgba(85,102,85,0.65);color:#fff;border:none;border-radius:3px;' +
+    'background:' + PENCIL_BG + ';color:#fff;border:none;border-radius:3px;' +
     'cursor:pointer;opacity:0.55;vertical-align:middle;' +
     'pointer-events:auto!important;' +
     'transition:opacity .18s,background .18s;flex-shrink:0;}' +
     '.qc-pencil.qc-pencil-block{display:block;margin:6px 0 0;}' +
-    '.qc-pencil:hover{opacity:1!important;background:rgba(85,102,85,0.95);}' +
-    '.qc-pencil.is-dirty{opacity:0.8;outline:2px solid rgba(90,138,90,.55);outline-offset:2px;}' +
+    '.qc-pencil:hover{opacity:1!important;background:' + PENCIL_BG_HOVER + ';}' +
+    '.qc-pencil.is-dirty{opacity:0.8;outline:2px solid ' + PENCIL_DIRTY_RING + ';outline-offset:2px;}' +
     '*:hover>.qc-pencil{opacity:0.8;}' +
     'body.no-pencils .qc-pencil{display:none!important;}' +
     'a[target="_blank"]{pointer-events:none!important;}' +
@@ -654,6 +675,20 @@
     }
   }
 
+  function readIframeDisplayText(key) {
+    // Fallback when the .md has no value for this field yet — read what the
+    // user is currently looking at in the iframe. Returns plain text; any
+    // markdown emphasis present in the source HTML is already rendered, so
+    // first edit may lose <strong>/<em> nuance. Subsequent edits round-trip
+    // cleanly through the .md.
+    try {
+      var doc = frame.contentDocument;
+      if (!doc) return '';
+      var span = doc.querySelector('span.qc-text[data-qc-key="' + key + '"]');
+      return span ? span.textContent.trim() : '';
+    } catch (e) { return ''; }
+  }
+
   function openPopup(key, rect) {
     if (activeKey && activeKey !== key) confirmPopup();
 
@@ -669,6 +704,11 @@
       var f = FIELDS[key];
       if (!f) return;
       value     = getCurrentValueRaw(f.section, f.sub);
+      // If the .md doesn't have a value for this field (newly added, or .md
+      // out of sync with the page), fall back to whatever the user is
+      // looking at in the iframe so the popup isn't blank and cancel
+      // doesn't wipe the visible text.
+      if (!value) value = readIframeDisplayText(key);
       labelText = f.label;
       hintText  = f.hint || (f.type !== 'input' ? 'Markdown: *italic*, **bold**' : '');
     }
@@ -712,7 +752,13 @@
   function cancelPopup() {
     if (!activeKey) return;
     var key = activeKey;
-    sendLive(key, popupPrev || '');
+    // Only revert the iframe display if the user actually changed something
+    // in the popup. Otherwise leave the iframe DOM untouched — important
+    // when popupPrev is empty (e.g., .md missing this field) so cancel
+    // doesn't wipe the visible text.
+    if (isPopupUnsaved()) {
+      sendLive(key, popupPrev || '');
+    }
     activeKey = null;
     popupPrev = null;
     popup.style.display = 'none';

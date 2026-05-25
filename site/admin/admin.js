@@ -1,20 +1,24 @@
 /**
- * Quinlynn & Co. staging admin — generic CMS engine.
+ * Site-agnostic staging admin engine.
  *
- * Site-specific config lives in admin-fields.js which must be loaded first.
- * It exposes three globals:
+ * Site-specific config lives in admin-fields.js (loaded first) and exposes:
  *   window.ADMIN_CONFIG        — repo, paths, deploy workflow
- *   window.ADMIN_FIELDS        — flat map of every editable field
- *   window.ADMIN_SECTION_ORDER — ordered list for markdown serialisation
+ *   window.ADMIN_FIELDS        — declarative map of every editable field
+ *   window.ADMIN_SECTION_ORDER — optional explicit markdown serialisation order
+ *
+ * The engine handles loading, rendering, live preview, dirty state, the GitHub
+ * publish flow, and dispatching pencil clicks to a popup editor. It contains
+ * no site-specific selectors, field names, render rules, or layout HTML —
+ * everything specific lives in admin-fields.js.
  */
 (function () {
   'use strict';
 
-  // ── Config (from admin-fields.js) ─────────────────────────────────────────
+  // ── Config ────────────────────────────────────────────────────────────────
 
   var CFG    = window.ADMIN_CONFIG        || {};
   var FIELDS = window.ADMIN_FIELDS        || {};
-  var ORDER  = window.ADMIN_SECTION_ORDER || [];
+  var ORDER  = window.ADMIN_SECTION_ORDER || null;
 
   var GITHUB_REPO   = CFG.githubRepo     || '';
   var GITHUB_BRANCH = CFG.githubBranch   || 'main';
@@ -32,76 +36,52 @@
   var originalMd    = '';
   var fileSha       = '';
   var iframeSrcHtml = '';
-  var draft         = {};          // { section: { sub: value } }
+  var draft         = {};        // { section: { sub_or_itemKey: rawValue } }
   var iframeScroll  = 0;
-  var activeKey     = null;        // field key whose popup is open
-  var popupPrev     = null;        // value/cardData before popup opened (for cancel)
-  var pencilsOn     = true;        // pencil toggle state
+  var activeKey     = null;      // field/item key whose popup is open
+  var popupPrev     = null;      // raw value before popup opened (for cancel)
+  var pencilsOn     = true;
   var _afterToken   = null;
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
 
-  var frame         = document.getElementById('adm-frame');
-  var frameOver     = document.getElementById('adm-frame-overlay');
-  var dirtyMsg      = document.getElementById('adm-dirty-msg');
-  var statusEl      = document.getElementById('adm-status');
-  var publishBtn    = document.getElementById('adm-publish');
-  var pencilToggle  = document.getElementById('adm-pencils-toggle');
-  var popup         = document.getElementById('adm-popup');
-  var popupLabel    = document.getElementById('adm-popup-label');
-  var popupBody     = document.getElementById('adm-popup-body');
-  var popupHint     = document.getElementById('adm-popup-hint');
-  var popupConfirm  = document.getElementById('adm-popup-confirm');
-  var popupCancel   = document.getElementById('adm-popup-cancel');
-  var tokenDialog   = document.getElementById('token-dialog');
-  var tokenForm     = document.getElementById('token-form');
-  var tokenInput    = document.getElementById('token-input');
-  var tokenError    = document.getElementById('token-error');
-  var tokenCancel   = document.getElementById('token-cancel-btn');
+  var frame        = document.getElementById('adm-frame');
+  var frameOver    = document.getElementById('adm-frame-overlay');
+  var dirtyMsg     = document.getElementById('adm-dirty-msg');
+  var statusEl     = document.getElementById('adm-status');
+  var publishBtn   = document.getElementById('adm-publish');
+  var pencilToggle = document.getElementById('adm-pencils-toggle');
+  var popup        = document.getElementById('adm-popup');
+  var popupLabel   = document.getElementById('adm-popup-label');
+  var popupBody    = document.getElementById('adm-popup-body');
+  var popupHint    = document.getElementById('adm-popup-hint');
+  var popupConfirm = document.getElementById('adm-popup-confirm');
+  var popupCancel  = document.getElementById('adm-popup-cancel');
+  var tokenDialog  = document.getElementById('token-dialog');
+  var tokenForm    = document.getElementById('token-form');
+  var tokenInput   = document.getElementById('token-input');
+  var tokenError   = document.getElementById('token-error');
+  var tokenCancel  = document.getElementById('token-cancel-btn');
 
   // ── Utilities ─────────────────────────────────────────────────────────────
 
   function esc(s) {
-    return String(s)
+    return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  function attr(s) { return esc(s); }
 
   function mdInline(text) {
-    if (!text) return '';
-    var t = text.trim();
+    if (text == null) return '';
+    var t = String(text).trim();
+    if (!t) return '';
     if (window.marked) {
       var h = window.marked.parse(t);
       return h.replace(/^<p>/, '').replace(/<\/p>\s*$/, '');
     }
     return t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.+?)\*/g,     '<em>$1</em>');
-  }
-
-  /**
-   * Render a raw field value into the HTML that should appear in the live
-   * iframe. Mirrors build-site.py rendering rules exactly.
-   */
-  function renderHtml(key, value) {
-    if (value === undefined || value === null) return '';
-    if (key === 'about-quote')    return '“' + mdInline(value) + '”';
-    if (key === 'about-meta') {
-      var ml = value.split('\n').filter(function (l) { return l.trim(); });
-      return ml.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('');
-    }
-    if (key === 'inquire-thanks-p') return esc(value);
-    if (key.startsWith('label-') || key === 'about-sign') return esc(value);
-    return mdInline(value);
-  }
-
-  function parseCard(raw) {
-    var lines  = (raw || '').split('\n').map(function (l) { return l.trim(); });
-    var pieces = (lines[0] || '').split('|').map(function (p) { return p.trim(); });
-    return { name: pieces[0] || '', price: pieces[1] || '', tag: pieces[2] || '', desc: lines[1] || '' };
-  }
-
-  function serializeCard(cd) {
-    return (cd.name || '') + ' | ' + (cd.price || '') + ' | ' + (cd.tag || '') + '\n' + (cd.desc || '');
   }
 
   function parseContent(text) {
@@ -140,40 +120,76 @@
   function loadMarked(cb) {
     if (window.marked) { cb(); return; }
     var s = document.createElement('script');
-    s.src    = 'https://cdn.jsdelivr.net/npm/marked@9/marked.min.js';
+    s.src     = 'https://cdn.jsdelivr.net/npm/marked@9/marked.min.js';
     s.onload  = cb;
     s.onerror = cb;
     document.head.appendChild(s);
   }
 
+  // ── Field rendering (single source of truth) ──────────────────────────────
+  //
+  // Turns a raw markdown value into HTML for the live preview / build-time
+  // injection step. `render: 'md'` (default) → inline markdown.
+  //   `render: 'escape'` → plain-text escape.
+  //   `render: 'lines'`  → split lines, escape, wrap each in <div>.
+  // `wrap(html)` is an optional site-specific post-transform.
+
+  function renderField(key, raw) {
+    var f = FIELDS[key];
+    if (!f || raw == null) return '';
+    var html;
+    var r = f.render || 'md';
+    if (r === 'escape') {
+      html = esc(raw);
+    } else if (r === 'lines') {
+      html = String(raw).split('\n')
+        .filter(function (l) { return l.trim(); })
+        .map(function (l) { return '<div>' + esc(l) + '</div>'; })
+        .join('\n');
+    } else {
+      html = mdInline(raw);
+    }
+    if (typeof f.wrap === 'function') html = f.wrap(html);
+    return html;
+  }
+
+  // ── List-field bookkeeping ────────────────────────────────────────────────
+  // Reverse index: itemKey → { listKey, field }. Built once at startup.
+
+  var ITEM_OWNER = (function () {
+    var idx = {};
+    Object.keys(FIELDS).forEach(function (k) {
+      var f = FIELDS[k];
+      if (f.type === 'list' && Array.isArray(f.itemKeys)) {
+        f.itemKeys.forEach(function (ik) { idx[ik] = { listKey: k, field: f }; });
+      }
+    });
+    return idx;
+  })();
+
+  function getListOwner(key) { return ITEM_OWNER[key] || null; }
+
+  function listRenderHelpers() {
+    return {
+      esc:         esc,
+      attr:        attr,
+      mdInline:    mdInline,
+      renderField: renderField,
+      pencilBtn:   function (key) { return pencilBtn(key); },
+    };
+  }
+
   // ── Draft helpers ─────────────────────────────────────────────────────────
 
-  function getDraftValue(fieldKey) {
-    var f = FIELDS[fieldKey];
-    if (!f) return undefined;
-    return (draft[f.section] || {})[f.sub];
+  function setDraftValue(section, key, value) {
+    if (!draft[section]) draft[section] = {};
+    draft[section][key] = value;
   }
 
-  function setDraftValue(fieldKey, value) {
-    var f = FIELDS[fieldKey];
-    if (!f) return;
-    if (!draft[f.section]) draft[f.section] = {};
-    draft[f.section][f.sub] = value;
-  }
-
-  function clearDraftValue(fieldKey) {
-    var f = FIELDS[fieldKey];
-    if (!f) return;
-    if (draft[f.section]) delete draft[f.section][f.sub];
-  }
-
-  function getCurrentValue(fieldKey) {
-    var dv = getDraftValue(fieldKey);
-    if (dv !== undefined) return dv;
-    var f    = FIELDS[fieldKey];
-    if (!f) return '';
+  function getCurrentValueRaw(section, key) {
+    if (draft[section] && draft[section][key] != null) return draft[section][key];
     var secs = parseContent(originalMd);
-    return (secs[f.section] || {})[f.sub] || '';
+    return (secs[section] || {})[key] || '';
   }
 
   function countDirty() {
@@ -182,13 +198,61 @@
     return n;
   }
 
+  function isPopupUnsaved() {
+    if (!activeKey) return false;
+    var owner = getListOwner(activeKey);
+    if (owner) {
+      var current = readItemFromPopup(owner.field);
+      var raw = owner.field.serializeItem ? owner.field.serializeItem(current) : '';
+      return raw !== popupPrev;
+    }
+    var inp = document.getElementById('adm-popup-input');
+    return !!inp && inp.value !== (popupPrev || '');
+  }
+
   function updateDirty() {
-    var dirty = countDirty() > 0;
-    publishBtn.disabled = !dirty;
-    dirtyMsg.hidden = !dirty;
+    var committed = countDirty() > 0;
+    publishBtn.disabled = !(committed || isPopupUnsaved());
+    dirtyMsg.hidden = !committed;
+  }
+
+  function isDirty(key) {
+    var owner = getListOwner(key);
+    if (owner) {
+      var sec = owner.field.section;
+      return !!(draft[sec] && draft[sec][key] != null);
+    }
+    var f = FIELDS[key];
+    if (!f) return false;
+    return !!(draft[f.section] && draft[f.section][f.sub] != null);
   }
 
   // ── Markdown serialiser ───────────────────────────────────────────────────
+  //
+  // Order is derived from FIELDS declaration order unless ADMIN_SECTION_ORDER
+  // is explicitly provided.
+
+  function deriveOrder() {
+    if (Array.isArray(ORDER)) return ORDER;
+    var sections = [];
+    var byId = {};
+    Object.keys(FIELDS).forEach(function (k) {
+      var f = FIELDS[k];
+      var sec = f.section;
+      if (!sec) return;
+      if (!byId[sec]) {
+        byId[sec] = { id: sec, keys: [] };
+        sections.push(byId[sec]);
+      }
+      var keys = (f.type === 'list' && Array.isArray(f.itemKeys))
+        ? f.itemKeys
+        : (f.sub ? [f.sub] : []);
+      keys.forEach(function (kk) {
+        if (byId[sec].keys.indexOf(kk) === -1) byId[sec].keys.push(kk);
+      });
+    });
+    return sections;
+  }
 
   function buildMarkdown() {
     var secs = parseContent(originalMd);
@@ -198,13 +262,13 @@
     }
     var fm    = getFrontmatter(originalMd).trimEnd();
     var parts = [fm];
-    ORDER.forEach(function (s) {
+    deriveOrder().forEach(function (s) {
       var sec = secs[s.id];
       if (!sec) return;
       parts.push('\n## ' + s.id);
       s.keys.forEach(function (k) {
         var v = sec[k];
-        if (v === undefined || v === null) return;
+        if (v == null) return;
         parts.push('\n### ' + k);
         parts.push(v);
       });
@@ -212,89 +276,47 @@
     return parts.join('\n') + '\n';
   }
 
-  // ── Product card renderer ─────────────────────────────────────────────────
+  // ── QC marker injection ───────────────────────────────────────────────────
 
-  var CARD_COLORS = ['warm', 'sage', '', 'taupe', 'deep', 'warm'];
-  var ARROW_SVG   = '<svg width="14" height="14" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16h20M19 9l7 7-7 7" /></svg>';
-
-  function renderCards(prods) {
-    var parts = [];
-    for (var i = 0; i < 6; i++) {
-      var text = prods['card' + (i + 1)] || '';
-      if (!text) continue;
-      var cd    = parseCard(text);
-      var color = CARD_COLORS[i];
-      var phCls = 'ph' + (color ? ' ' + color : '') + ' inner';
-      parts.push(
-        '\n        <a class="pcard" data-card-key="card' + (i + 1) + '" href="https://thewaysofherhome.etsy.com" ' +
-        'target="_blank" rel="noopener noreferrer">\n' +
-        '          <div class="pcard-img"><div class="' + phCls + '">' +
-        (cd.tag ? '<span class="ph-tag">' + esc(cd.tag) + '</span>' : '') + '</div></div>\n' +
-        '          <div class="pcard-meta">\n' +
-        '            <div class="pcard-name">' + esc(cd.name) + pencilBtn('card' + (i + 1)) + '</div>\n' +
-        '            <div class="pcard-price">' + esc(cd.price) + '</div>\n' +
-        (cd.desc ? '            <p class="pcard-desc">' + esc(cd.desc) + '</p>\n' : '') +
-        '            <span class="pcard-cta">View on Etsy\n              ' + ARROW_SVG + '\n            </span>\n' +
-        '          </div>\n        </a>\n'
-      );
-    }
-    return parts.join('');
-  }
-
-  // ── QC injection (content values) ────────────────────────────────────────
-
-  function injectQC(html, key, value) {
+  function injectQC(html, key, inner) {
     return html.replace(
       new RegExp('(<!-- QC:' + key + ' -->)[\\s\\S]*?(<!-- /QC:' + key + ' -->)', 'g'),
-      function (m, open, close) { return open + value + close; }
+      function (m, open, close) { return open + inner + close; }
     );
   }
 
   function applyDraft(html, secs) {
-    function g(s, k) { return (secs[s] || {})[k] || ''; }
-
-    var lab = secs.labels || {};
-    if (lab.about)    html = injectQC(html, 'label-about',    esc(lab.about));
-    if (lab.products) html = injectQC(html, 'label-products', esc(lab.products));
-    if (lab.contact)  html = injectQC(html, 'label-contact',  esc(lab.contact));
-
-    var hT = mdInline(g('hero', 'title')); if (hT) html = injectQC(html, 'hero-title', hT);
-    var hS = mdInline(g('hero', 'sub'));   if (hS) html = injectQC(html, 'hero-sub',   hS);
-
-    var aH  = mdInline(g('about', 'heading'));  if (aH)  html = injectQC(html, 'about-heading', aH);
-    var aB1 = mdInline(g('about', 'bio1'));     if (aB1) html = injectQC(html, 'about-bio1',    aB1);
-    var aQ  = mdInline(g('about', 'quote'));
-    if (aQ)  html = injectQC(html, 'about-quote', '“' + aQ + '”');
-    var aB2 = mdInline(g('about', 'bio2'));     if (aB2) html = injectQC(html, 'about-bio2',    aB2);
-    var aS  = mdInline(g('about', 'sign'));     if (aS)  html = injectQC(html, 'about-sign',    aS);
-    var aMeta = g('about', 'meta');
-    if (aMeta) {
-      var ml = aMeta.split('\n').filter(function (l) { return l.trim(); });
-      html = injectQC(html, 'about-meta',
-        '\n          ' + ml.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('\n          ') + '\n        ');
-    }
-
-    var pH = mdInline(g('products', 'heading')); if (pH) html = injectQC(html, 'products-heading', pH);
-    var pC = renderCards(secs.products || {});   if (pC) html = injectQC(html, 'products-cards',   pC);
-
-    var iH  = mdInline(g('inquire', 'heading'));   if (iH)  html = injectQC(html, 'inquire-heading',   iH);
-    var iL  = mdInline(g('inquire', 'lede'));       if (iL)  html = injectQC(html, 'inquire-lede',      iL);
-    var iTH = mdInline(g('inquire', 'thanks-h'));  if (iTH) html = injectQC(html, 'inquire-thanks-h',  iTH);
-    var iTP = esc(g('inquire', 'thanks-p'));        if (iTP) html = injectQC(html, 'inquire-thanks-p',  iTP);
-    var iEN = mdInline(g('inquire', 'etsy-note')); if (iEN) html = injectQC(html, 'inquire-etsy-note', iEN);
-
-    var fT = mdInline(g('footer', 'tagline')); if (fT) html = injectQC(html, 'footer-tagline', fT);
-
+    var helpers = listRenderHelpers();
+    // Pass 1: simple fields (input/textarea)
+    Object.keys(FIELDS).forEach(function (k) {
+      var f = FIELDS[k];
+      if (f.type === 'list') return;
+      var raw = (secs[f.section] || {})[f.sub];
+      if (raw == null || raw === '') return;
+      var rendered = renderField(k, raw);
+      if (rendered) html = injectQC(html, k, rendered);
+    });
+    // Pass 2: list fields
+    Object.keys(FIELDS).forEach(function (k) {
+      var f = FIELDS[k];
+      if (f.type !== 'list' || typeof f.renderList !== 'function') return;
+      var rendered = f.renderList(secs[f.section] || {}, helpers);
+      if (rendered) html = injectQC(html, k, rendered);
+    });
     return html;
   }
 
   // ── Pencil injection ──────────────────────────────────────────────────────
 
-  var PENCIL_SVG = '<svg width="11" height="11" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 4l6 6L10 28H4v-6L22 4z"/></svg>';
+  var PENCIL_SVG =
+    '<svg width="11" height="11" viewBox="0 0 32 32" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" ' +
+    'stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M22 4l6 6L10 28H4v-6L22 4z"/></svg>';
 
-  // Injected into iframe <head>. Handles live text updates without a full re-render.
+  // Editor-only styles, injected into the preview iframe <head>. Generic
+  // (pencil button, dirty outline, block external nav/forms) — no site CSS.
   var IFRAME_STYLE = (
-    /* Pencil buttons */
     '.qc-pencil{display:inline-flex;align-items:center;justify-content:center;' +
     'width:17px;height:17px;margin-left:5px;padding:0;' +
     'background:rgba(85,102,85,0.65);color:#fff;border:none;border-radius:3px;' +
@@ -305,20 +327,31 @@
     '.qc-pencil:hover{opacity:1!important;background:rgba(85,102,85,0.95);}' +
     '.qc-pencil.is-dirty{opacity:0.8;outline:2px solid rgba(90,138,90,.55);outline-offset:2px;}' +
     '*:hover>.qc-pencil{opacity:0.8;}' +
-    /* Hide all pencils when body has no-pencils class */
     'body.no-pencils .qc-pencil{display:none!important;}' +
-    /* Block external nav/form interaction in preview */
     'a[target="_blank"]{pointer-events:none!important;}' +
-    'form{pointer-events:none!important;}'
+    'form{pointer-events:none!important;}' +
+    // Fixed/sticky page headers overlay content; make them click-through so
+    // pencils on content beneath the header remain reachable. Pencils inside
+    // the header still work because .qc-pencil has pointer-events:auto.
+    'header{pointer-events:none!important;}'
   );
 
-  // Script injected into iframe <body> end. Receives live-update messages.
+  // Site-agnostic iframe script: forwards pencil clicks to the parent, toggles
+  // pencil visibility, and runs the default qcText replacement. Anything more
+  // specific is handled by parent-context liveUpdate callbacks via direct DOM
+  // access — the iframe never executes config-supplied code.
   var IFRAME_SCRIPT = (
     '<script>(function(){' +
     'window.qcEdit=function(key,btn){' +
     'var r=btn.getBoundingClientRect();' +
     'window.parent.postMessage({type:"qc-edit",key:key,rect:{x:r.left,y:r.top,w:r.width,h:r.height}},"*");' +
     '};' +
+    // Forward any non-pencil click in the iframe to the parent so it can
+    // cancel an open popup. Pencil clicks already send their own qc-edit.
+    'document.addEventListener("click",function(e){' +
+    'if(e.target&&e.target.closest&&e.target.closest(".qc-pencil"))return;' +
+    'window.parent.postMessage({type:"qc-iframe-click"},"*");' +
+    '},true);' +
     'window.addEventListener("message",function(e){' +
     'if(!e.data)return;' +
     'var t=e.data.type,key=e.data.key;' +
@@ -327,72 +360,50 @@
     'document.querySelectorAll(".qc-pencil[data-qc-key=\\""+key+"\\"]").forEach(function(p){p.classList.toggle("is-dirty",!!e.data.dirty);});' +
     'return;}' +
     'if(t!=="qc-live")return;' +
-    'if(key==="about-meta"){' +
-    'var c=document.querySelector(".about-aside-meta");' +
-    'if(!c)return;' +
-    'var p=c.querySelector(".qc-pencil");' +
-    'c.innerHTML=e.data.html||"";' +
-    'if(p)c.appendChild(p);' +
-    'return;}' +
-    'if(/^card\\d$/.test(key)){' +
-    'var pc=document.querySelector("[data-card-key=\\""+key+"\\"]");' +
-    'if(!pc||!e.data.cd)return;' +
-    'var d=e.data.cd;' +
-    'var n=pc.querySelector(".pcard-name");if(n)n.textContent=d.name||"";' +
-    'var pr=pc.querySelector(".pcard-price");if(pr)pr.textContent=d.price||"";' +
-    'var tg=pc.querySelector(".ph-tag");if(tg)tg.textContent=d.tag||"";' +
-    'var ds=pc.querySelector(".pcard-desc");if(ds)ds.textContent=d.desc||"";' +
-    'return;}' +
     'document.querySelectorAll("span.qc-text[data-qc-key=\\""+key+"\\"]").forEach(function(s){s.innerHTML=e.data.html||"";});' +
     '});' +
     '})();<' + '/script>'
   );
 
-  function isDirty(fieldKey) {
-    return getDraftValue(fieldKey) !== undefined;
+  function pencilLabel(key) {
+    var owner = getListOwner(key);
+    if (owner) return owner.field.label + ' — ' + key;
+    var f = FIELDS[key] || {};
+    return f.label || key;
   }
 
   function pencilBtn(key, blockClass) {
     var cls = 'qc-pencil' + (blockClass ? ' ' + blockClass : '') + (isDirty(key) ? ' is-dirty' : '');
-    var f   = FIELDS[key] || {};
     return '<button class="' + cls + '" data-qc-key="' + key + '" ' +
-      'aria-label="Edit ' + (f.label || key) + '" ' +
+      'aria-label="Edit ' + esc(pencilLabel(key)) + '" ' +
       'onclick="event.preventDefault();event.stopPropagation();qcEdit(\'' + key + '\',this)">' +
       PENCIL_SVG + '</button>';
   }
 
   function injectFieldPencils(html) {
-    // Inject styles
     html = html.replace('</head>', '<style>' + IFRAME_STYLE + '</style>\n</head>');
-    // Inject live-update script
     html = html.replace('</body>', IFRAME_SCRIPT + '\n</body>');
 
-    // Wrap every QC text region with <span class="qc-text"> and append pencil
-    // Excludes about-meta (block content), products-cards (per-card below)
-    var textKeys = Object.keys(FIELDS).filter(function (k) {
-      return FIELDS[k].type !== 'card' && k !== 'about-meta';
+    Object.keys(FIELDS).forEach(function (key) {
+      var f = FIELDS[key];
+      if (f.type === 'list') return;  // list pencils are emitted by renderList
+      if (f.pencilStyle === 'block') {
+        // Block-style: pencil appears after the closing marker, no qc-text wrap.
+        var re = new RegExp('(<!-- \\/QC:' + key + ' -->)');
+        html = html.replace(re, '$1' + pencilBtn(key, 'qc-pencil-block'));
+      } else {
+        var btn = pencilBtn(key);
+        html = html.replace(
+          new RegExp('(<!-- QC:' + key + ' -->)([\\s\\S]*?)(<!-- /QC:' + key + ' -->)', 'g'),
+          '$1<span class="qc-text" data-qc-key="' + key + '">$2</span>' + btn + '$3'
+        );
+      }
     });
 
-    textKeys.forEach(function (key) {
-      var btn = pencilBtn(key);
-      html = html.replace(
-        new RegExp('(<!-- QC:' + key + ' -->)([\\s\\S]*?)(<!-- /QC:' + key + ' -->)', 'g'),
-        '$1<span class="qc-text" data-qc-key="' + key + '">$2</span>' + btn + '$3'
-      );
-    });
-
-    // about-meta: pencil button after closing marker
-    html = html.replace(
-      /(<!-- \/QC:about-meta -->)/,
-      '$1' + pencilBtn('about-meta', 'qc-pencil-block')
-    );
-
-    // Apply pencil visibility state
     if (!pencilsOn) {
       html = html.replace('<body ', '<body class="no-pencils" ');
       html = html.replace('<body>', '<body class="no-pencils">');
     }
-
     return html;
   }
 
@@ -425,26 +436,56 @@
     frame.srcdoc = html;
   }
 
-  // ── Live update (postMessage to iframe) ───────────────────────────────────
+  // ── Live update dispatch ──────────────────────────────────────────────────
+  //
+  // For list items the engine passes a parsed object to liveUpdate. For
+  // simple fields it passes the rendered HTML. Fields without a liveUpdate
+  // function fall back to the default qcText message handled inside the
+  // iframe script.
 
-  function sendLive(key, rawValue, cardData) {
+  function sendLive(key, value) {
     if (!frame.contentWindow) return;
+    var owner = getListOwner(key);
+    if (owner) {
+      var lf = owner.field;
+      var item = (typeof value === 'object' && value !== null)
+        ? value
+        : (lf.parseItem ? lf.parseItem(value || '') : value);
+      if (typeof lf.liveUpdate === 'function') {
+        try { lf.liveUpdate(frame.contentDocument, key, item); } catch (e) {}
+      }
+      return;
+    }
+    var f = FIELDS[key];
+    if (!f) return;
+    if (typeof f.liveUpdate === 'function') {
+      try { f.liveUpdate(frame.contentDocument, key, renderField(key, value)); } catch (e) {}
+      return;
+    }
     frame.contentWindow.postMessage({
       type: 'qc-live',
       key:  key,
-      html: cardData ? null : renderHtml(key, rawValue),
-      cd:   cardData || null,
+      html: renderField(key, value),
     }, '*');
   }
 
-  // ── Popup ─────────────────────────────────────────────────────────────────
+  function sendPencilState(key) {
+    if (!frame.contentWindow) return;
+    frame.contentWindow.postMessage({
+      type:  'qc-pencil-dirty',
+      key:   key,
+      dirty: isDirty(key),
+    }, '*');
+  }
+
+  // ── Popup editor ──────────────────────────────────────────────────────────
 
   function positionPopup(rect) {
-    var W      = window.innerWidth;
-    var H      = window.innerHeight;
-    var fr     = frame.getBoundingClientRect();
-    var popW   = 310;
-    var popH   = popup.offsetHeight || 220;
+    var W   = window.innerWidth;
+    var H   = window.innerHeight;
+    var fr  = frame.getBoundingClientRect();
+    var popW = 310;
+    var popH = popup.offsetHeight || 220;
 
     var x = fr.left + rect.x;
     var y = fr.top  + rect.y + rect.h + 8;
@@ -458,84 +499,101 @@
     popup.style.top  = y + 'px';
   }
 
-  function buildPopupBody(fieldKey, value) {
-    var f = FIELDS[fieldKey] || {};
-    if (f.type === 'card') {
-      var cd = parseCard(value);
-      return (
-        '<div class="adm-row-2">' +
-          '<div class="adm-field"><label class="adm-field-label">Name</label>' +
-          '<input class="adm-field-input" data-card-part="name" type="text" value="' + esc(cd.name) + '"></div>' +
-          '<div class="adm-field"><label class="adm-field-label">Price</label>' +
-          '<input class="adm-field-input" data-card-part="price" type="text" value="' + esc(cd.price) + '"></div>' +
-        '</div>' +
-        '<div class="adm-field"><label class="adm-field-label">Tag</label>' +
-        '<input class="adm-field-input" data-card-part="tag" type="text" value="' + esc(cd.tag) + '"></div>' +
-        '<div class="adm-field"><label class="adm-field-label">Description</label>' +
-        '<input class="adm-field-input" data-card-part="desc" type="text" value="' + esc(cd.desc) + '"></div>'
-      );
+  function buildItemPopupBody(listField, currentItem) {
+    var schema = listField.itemSchema || {};
+    var keys = Object.keys(schema);
+    var rows = '';
+    keys.forEach(function (partKey) {
+      var p = schema[partKey];
+      var val = currentItem[partKey] || '';
+      var input = (p.type === 'textarea')
+        ? '<textarea class="adm-field-textarea" data-item-part="' + partKey + '" rows="3">' + esc(val) + '</textarea>'
+        : '<input class="adm-field-input" data-item-part="' + partKey + '" type="text" value="' + esc(val) + '">';
+      rows += '<div class="adm-field">' +
+              '<label class="adm-field-label">' + esc(p.label || partKey) + '</label>' +
+              input +
+              '</div>';
+    });
+    return rows;
+  }
+
+  function buildPopupBody(key, value) {
+    var owner = getListOwner(key);
+    if (owner) {
+      var item = owner.field.parseItem ? owner.field.parseItem(value) : { value: value };
+      return buildItemPopupBody(owner.field, item);
     }
+    var f = FIELDS[key] || {};
     if (f.type === 'textarea') {
       return '<textarea class="adm-field-textarea" id="adm-popup-input" rows="4">' + esc(value) + '</textarea>';
     }
     return '<input class="adm-field-input" id="adm-popup-input" type="text" value="' + esc(value) + '">';
   }
 
-  function readPopupValue() {
-    var f = FIELDS[activeKey] || {};
-    if (f.type === 'card') {
-      var cd = {
-        name:  (popupBody.querySelector('[data-card-part="name"]')  || {}).value || '',
-        price: (popupBody.querySelector('[data-card-part="price"]') || {}).value || '',
-        tag:   (popupBody.querySelector('[data-card-part="tag"]')   || {}).value || '',
-        desc:  (popupBody.querySelector('[data-card-part="desc"]')  || {}).value || '',
-      };
-      return serializeCard(cd);
+  function readItemFromPopup(listField) {
+    var item = {};
+    Object.keys(listField.itemSchema || {}).forEach(function (p) {
+      var el = popupBody.querySelector('[data-item-part="' + p + '"]');
+      item[p] = el ? el.value : '';
+    });
+    return item;
+  }
+
+  function readPopupRaw() {
+    var owner = getListOwner(activeKey);
+    if (owner) {
+      var item = readItemFromPopup(owner.field);
+      return owner.field.serializeItem ? owner.field.serializeItem(item) : '';
     }
     return (document.getElementById('adm-popup-input') || {}).value || '';
   }
 
-  function readCardData() {
-    return {
-      name:  (popupBody.querySelector('[data-card-part="name"]')  || {}).value || '',
-      price: (popupBody.querySelector('[data-card-part="price"]') || {}).value || '',
-      tag:   (popupBody.querySelector('[data-card-part="tag"]')   || {}).value || '',
-      desc:  (popupBody.querySelector('[data-card-part="desc"]')  || {}).value || '',
-    };
-  }
-
   function attachLiveListeners() {
-    var f = FIELDS[activeKey] || {};
-    if (f.type === 'card') {
-      popupBody.querySelectorAll('.adm-field-input').forEach(function (inp) {
+    var owner = getListOwner(activeKey);
+    if (owner) {
+      var f = owner.field;
+      popupBody.querySelectorAll('[data-item-part]').forEach(function (inp) {
         inp.addEventListener('input', function () {
-          sendLive(activeKey, null, readCardData());
+          sendLive(activeKey, readItemFromPopup(f));
+          updateDirty();
         });
       });
-    } else {
-      var inp = document.getElementById('adm-popup-input');
-      if (inp) {
-        inp.addEventListener('input', function () {
-          sendLive(activeKey, inp.value, null);
-        });
-      }
+      return;
+    }
+    var single = document.getElementById('adm-popup-input');
+    if (single) {
+      single.addEventListener('input', function () {
+        sendLive(activeKey, single.value);
+        updateDirty();
+      });
     }
   }
 
-  function openPopup(fieldKey, rect) {
-    // Auto-confirm any open popup before switching
-    if (activeKey && activeKey !== fieldKey) confirmPopup();
+  function openPopup(key, rect) {
+    if (activeKey && activeKey !== key) confirmPopup();
 
-    var f     = FIELDS[fieldKey];
-    if (!f) return;
-    var value = getCurrentValue(fieldKey);
+    var owner = getListOwner(key);
+    var labelText, hintText, value;
 
-    activeKey  = fieldKey;
-    popupPrev  = value;
+    if (owner) {
+      var lf = owner.field;
+      value     = getCurrentValueRaw(lf.section, key);
+      labelText = lf.label + ' — ' + key;
+      hintText  = lf.hint || '';
+    } else {
+      var f = FIELDS[key];
+      if (!f) return;
+      value     = getCurrentValueRaw(f.section, f.sub);
+      labelText = f.label;
+      hintText  = f.hint || (f.type !== 'input' ? 'Markdown: *italic*, **bold**' : '');
+    }
 
-    popupLabel.textContent = f.label;
-    popupHint.textContent  = f.hint || (f.type !== 'input' ? 'Markdown: *italic*, **bold**' : '');
-    popupBody.innerHTML    = buildPopupBody(fieldKey, value);
+    activeKey = key;
+    popupPrev = value;
+
+    popupLabel.textContent = labelText;
+    popupHint.textContent  = hintText;
+    popupBody.innerHTML    = buildPopupBody(key, value);
 
     popup.style.display = 'flex';
     popup.classList.add('is-open');
@@ -548,43 +606,34 @@
 
   function confirmPopup() {
     if (!activeKey) return;
-    var value = readPopupValue();
-    setDraftValue(activeKey, value);
+    var key   = activeKey;
+    var raw   = readPopupRaw();
+    var owner = getListOwner(key);
+    if (owner) {
+      setDraftValue(owner.field.section, key, raw);
+    } else {
+      var f = FIELDS[key];
+      if (f) setDraftValue(f.section, f.sub, raw);
+    }
     updateDirty();
-    var key = activeKey;
     activeKey = null;
     popupPrev = null;
     popup.style.display = 'none';
     popup.classList.remove('is-open');
     frameOver.hidden = true;
-    // Update pencil dirty state in iframe
     sendPencilState(key);
   }
 
   function cancelPopup() {
     if (!activeKey) return;
-    // Revert live preview to previous value
-    var f = FIELDS[activeKey];
-    if (f && f.type === 'card') {
-      sendLive(activeKey, null, parseCard(popupPrev || ''));
-    } else {
-      sendLive(activeKey, popupPrev || '', null);
-    }
+    var key = activeKey;
+    sendLive(key, popupPrev || '');
     activeKey = null;
     popupPrev = null;
     popup.style.display = 'none';
     popup.classList.remove('is-open');
     frameOver.hidden = true;
-  }
-
-  function sendPencilState(key) {
-    if (!frame.contentWindow) return;
-    // Toggle is-dirty class on the pencil inside the iframe
-    frame.contentWindow.postMessage({
-      type:  'qc-pencil-dirty',
-      key:   key,
-      dirty: getDraftValue(key) !== undefined,
-    }, '*');
+    updateDirty();   // restore correct enabled state after cancel
   }
 
   // ── Pencil toggle ─────────────────────────────────────────────────────────
@@ -607,12 +656,10 @@
     bytes.forEach(function (b) { bin += String.fromCharCode(b); });
     return btoa(bin);
   }
-
   function fromB64(str) {
     var bytes = Uint8Array.from(atob(str.replace(/\s/g, '')), function (c) { return c.charCodeAt(0); });
     return new TextDecoder('utf-8').decode(bytes);
   }
-
   function ghHeaders(token) {
     return {
       'Authorization': 'token ' + token,
@@ -739,16 +786,13 @@
       saveScroll();
       frameOver.hidden = false;
       openPopup(e.data.key, e.data.rect);
+    } else if (e.data.type === 'qc-iframe-click') {
+      if (activeKey) cancelPopup();
     }
   });
-
-  // Close popup when clicking the overlay (but not the iframe content)
-  frameOver.addEventListener('click', cancelPopup);
-
   popupConfirm.addEventListener('click', function (e) { e.stopPropagation(); confirmPopup(); });
   popupCancel.addEventListener('click',  function (e) { e.stopPropagation(); cancelPopup(); });
 
-  // Keyboard: Enter on input confirms, Escape cancels anywhere
   popupBody.addEventListener('keydown', function (e) {
     if (e.key === 'Escape')   { e.preventDefault(); cancelPopup(); }
     if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); confirmPopup(); }

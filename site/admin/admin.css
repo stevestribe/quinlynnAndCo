@@ -2,6 +2,12 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* The engine toggles visibility via the `hidden` attribute on several
+   elements (#adm-frame-overlay, #adm-dirty-msg, #token-error). Some of those
+   elements also carry display rules (e.g. display:flex) which would override
+   the default [hidden] { display: none }. Force [hidden] to win. */
+[hidden] { display: none !important; }
+
 :root {
   --adm-bar-h:        52px;
   --adm-bg:           #F0EDE8;
@@ -220,6 +226,10 @@ html, body {
   background: transparent;
   z-index: 10;
   cursor: default;
+  /* Don't block clicks — clicks on iframe content must reach pencils so the
+     user can switch popups by clicking another pencil. Click-anywhere-to-
+     cancel is handled by the iframe forwarding clicks back to the parent. */
+  pointer-events: none;
 }
 
 /* ── Floating field popup ────────────────────────────────────────────────── */

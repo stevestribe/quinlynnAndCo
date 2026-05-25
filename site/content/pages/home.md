@@ -79,7 +79,7 @@ Made to fit a standard hardcover notebook.
 Made *once*, made for you.
 
 ### lede
-A short note is plenty. Tell me what you have in mind — a shape, a use, fabrics you love — and I'll write back with materials, timing, and a quote.
+A note is plenty. Tell me what you have in mind — a shape, a use, fabrics you love — and I'll write back with materials, timing, and a quote.
 
 ### thanks-h
 Thanks for dropping me *a note.*

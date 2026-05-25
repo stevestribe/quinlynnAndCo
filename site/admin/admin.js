@@ -2,9 +2,15 @@
  * Site-agnostic staging admin engine.
  *
  * Site-specific config lives in admin-fields.js (loaded first) and exposes:
- *   window.ADMIN_CONFIG        — repo, paths, deploy workflow
- *   window.ADMIN_FIELDS        — declarative map of every editable field
- *   window.ADMIN_SECTION_ORDER — optional explicit markdown serialisation order
+ *   window.ADMIN_CONFIG        — repo, deploy workflow, and (multi-page) pages list
+ *   window.ADMIN_FIELDS        — field map. Flat for single-page sites, or
+ *                                 keyed by page id for multi-page sites.
+ *   window.ADMIN_SECTION_ORDER — optional explicit markdown serialisation order.
+ *                                 In multi-page mode may be keyed by page id.
+ *
+ * Single-page sites set ADMIN_CONFIG.contentPath/siteIndexUrl. Multi-page sites
+ * set ADMIN_CONFIG.pages = [{id, label, contentPath, siteUrl}, …] and shape
+ * ADMIN_FIELDS as { pageId: { fieldKey: {…} } }.
  *
  * The engine handles loading, rendering, live preview, dirty state, the GitHub
  * publish flow, and dispatching pencil clicks to a popup editor. It contains
@@ -16,22 +22,89 @@
 
   // ── Config ────────────────────────────────────────────────────────────────
 
-  var CFG    = window.ADMIN_CONFIG        || {};
-  var FIELDS = window.ADMIN_FIELDS        || {};
-  var ORDER  = window.ADMIN_SECTION_ORDER || null;
+  var CFG       = window.ADMIN_CONFIG        || {};
+  var ALL_FIELDS = window.ADMIN_FIELDS        || {};
+  var ALL_ORDER  = window.ADMIN_SECTION_ORDER || null;
 
   var GITHUB_REPO   = CFG.githubRepo     || '';
   var GITHUB_BRANCH = CFG.githubBranch   || 'main';
-  var CONTENT_PATH  = CFG.contentPath    || '';
   var DEPLOY_WF     = CFG.deployWorkflow || 'deploy-staging.yml';
   var DEPLOY_TARGET = CFG.deployTarget   || 'staging';
-  var SITE_INDEX    = CFG.siteIndexUrl   || '/index.html';
 
-  var CONTENT_API = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + CONTENT_PATH;
-  var DEPLOY_API  = 'https://api.github.com/repos/' + GITHUB_REPO + '/actions/workflows/' + DEPLOY_WF + '/dispatches';
-  var TOKEN_KEY   = 'admin_github_token';
+  // Pages: either explicit (multi-page) or a synthetic single entry (legacy).
+  var IS_MULTIPAGE = Array.isArray(CFG.pages) && CFG.pages.length > 0;
+  var PAGES = IS_MULTIPAGE ? CFG.pages.slice() : [{
+    id:          '_default',
+    label:       '',
+    contentPath: CFG.contentPath  || '',
+    siteUrl:     CFG.siteIndexUrl || '/index.html',
+  }];
 
-  // ── State ─────────────────────────────────────────────────────────────────
+  var DEPLOY_API = 'https://api.github.com/repos/' + GITHUB_REPO + '/actions/workflows/' + DEPLOY_WF + '/dispatches';
+  var TOKEN_KEY  = 'admin_github_token';
+
+  function contentApi(pageId) {
+    var p = PAGES.find(function (x) { return x.id === pageId; });
+    return 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/' + (p ? p.contentPath : '');
+  }
+  function pageSiteUrl(pageId) {
+    var p = PAGES.find(function (x) { return x.id === pageId; });
+    return p ? p.siteUrl : '/index.html';
+  }
+
+  // ── Per-page state ────────────────────────────────────────────────────────
+  //
+  // pageState caches loaded markdown, sha, iframe HTML, draft, and scroll
+  // position for every page the user has visited. The top-level variables
+  // (originalMd, fileSha, draft, etc.) are a snapshot of the *active* page;
+  // they get swapped in/out on page switch. Most engine code keeps using
+  // them as before.
+
+  var pageState = {};
+  function getPageState(id) {
+    if (!pageState[id]) {
+      pageState[id] = {
+        originalMd:    '',
+        fileSha:       '',
+        iframeSrcHtml: '',
+        draft:         {},
+        scroll:        0,
+        loaded:        false,
+      };
+    }
+    return pageState[id];
+  }
+
+  var activePage = PAGES[0].id;
+
+  // Derived: which field map / item-owner index / order applies to active page.
+  function computeActiveFields() {
+    if (!IS_MULTIPAGE) return ALL_FIELDS;
+    return (ALL_FIELDS && ALL_FIELDS[activePage]) || {};
+  }
+  function computeItemOwners(fields) {
+    var idx = {};
+    Object.keys(fields).forEach(function (k) {
+      var f = fields[k];
+      if (f && f.type === 'list' && Array.isArray(f.itemKeys)) {
+        f.itemKeys.forEach(function (ik) { idx[ik] = { listKey: k, field: f }; });
+      }
+    });
+    return idx;
+  }
+  function computeActiveOrder() {
+    if (!IS_MULTIPAGE) return Array.isArray(ALL_ORDER) ? ALL_ORDER : null;
+    if (ALL_ORDER && typeof ALL_ORDER === 'object' && !Array.isArray(ALL_ORDER)
+        && Array.isArray(ALL_ORDER[activePage])) {
+      return ALL_ORDER[activePage];
+    }
+    return null;
+  }
+
+  // Active-page snapshots (swapped on page switch via swapState).
+  var FIELDS     = computeActiveFields();
+  var ITEM_OWNER = computeItemOwners(FIELDS);
+  var ORDER      = computeActiveOrder();
 
   var originalMd    = '';
   var fileSha       = '';
@@ -42,6 +115,28 @@
   var popupPrev     = null;      // raw value before popup opened (for cancel)
   var pencilsOn     = true;
   var _afterToken   = null;
+
+  function syncActiveToPageState() {
+    var ps = getPageState(activePage);
+    ps.originalMd    = originalMd;
+    ps.fileSha       = fileSha;
+    ps.iframeSrcHtml = iframeSrcHtml;
+    ps.draft         = draft;
+    ps.scroll        = iframeScroll;
+    ps.loaded        = !!originalMd;
+  }
+
+  function loadActiveFromPageState() {
+    var ps = getPageState(activePage);
+    originalMd    = ps.originalMd;
+    fileSha       = ps.fileSha;
+    iframeSrcHtml = ps.iframeSrcHtml;
+    draft         = ps.draft;
+    iframeScroll  = ps.scroll;
+    FIELDS        = computeActiveFields();
+    ITEM_OWNER    = computeItemOwners(FIELDS);
+    ORDER         = computeActiveOrder();
+  }
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
 
@@ -154,18 +249,8 @@
   }
 
   // ── List-field bookkeeping ────────────────────────────────────────────────
-  // Reverse index: itemKey → { listKey, field }. Built once at startup.
-
-  var ITEM_OWNER = (function () {
-    var idx = {};
-    Object.keys(FIELDS).forEach(function (k) {
-      var f = FIELDS[k];
-      if (f.type === 'list' && Array.isArray(f.itemKeys)) {
-        f.itemKeys.forEach(function (ik) { idx[ik] = { listKey: k, field: f }; });
-      }
-    });
-    return idx;
-  })();
+  // Reverse index ITEM_OWNER (itemKey → { listKey, field }) is recomputed on
+  // page switch by computeItemOwners() above.
 
   function getListOwner(key) { return ITEM_OWNER[key] || null; }
 
@@ -636,6 +721,78 @@
     updateDirty();   // restore correct enabled state after cancel
   }
 
+  // ── Page selector (multi-page mode) ───────────────────────────────────────
+
+  var pageSelectEl = null;
+
+  function buildPageSelector() {
+    if (!IS_MULTIPAGE) return;
+    var brand = document.querySelector('.adm-brand');
+    if (!brand) return;
+    var sel = document.createElement('select');
+    sel.id = 'adm-page-select';
+    sel.className = 'adm-page-select';
+    sel.setAttribute('aria-label', 'Select page to edit');
+    PAGES.forEach(function (p) {
+      var opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.label || p.id;
+      sel.appendChild(opt);
+    });
+    sel.value = activePage;
+    sel.addEventListener('change', function () {
+      var requested = sel.value;
+      if (!switchPage(requested)) {
+        // User declined or switch failed; revert selector.
+        sel.value = activePage;
+      }
+    });
+    brand.appendChild(sel);
+    pageSelectEl = sel;
+  }
+
+  function updateViewLiveHref() {
+    var live = document.getElementById('adm-view-live');
+    if (!live || !IS_MULTIPAGE) return;
+    var url = pageSiteUrl(activePage);
+    if (url) live.href = url;
+  }
+
+  // Returns true if switch happened, false if cancelled.
+  function switchPage(newId) {
+    if (newId === activePage) return true;
+    if (activeKey) confirmPopup();
+    if (countDirty() > 0) {
+      var ok = window.confirm(
+        'You have unsaved changes on the current page. Discard them and switch pages?'
+      );
+      if (!ok) return false;
+      // Discard: clear in place so the shared reference stays consistent.
+      Object.keys(draft).forEach(function (k) { delete draft[k]; });
+    }
+    saveScroll();
+    syncActiveToPageState();
+
+    activePage = newId;
+    loadActiveFromPageState();
+    updateViewLiveHref();
+
+    var ps = getPageState(activePage);
+    if (!ps.loaded) {
+      var token = getToken();
+      if (token) {
+        loadContent(token);
+      } else {
+        _afterToken = function (t) { loadContent(t); };
+        showTokenDialog();
+      }
+    } else {
+      renderIframe();
+      updateDirty();
+    }
+    return true;
+  }
+
   // ── Pencil toggle ─────────────────────────────────────────────────────────
 
   pencilToggle.addEventListener('click', function () {
@@ -670,10 +827,11 @@
 
   async function loadContent(token) {
     setStatus('Loading…');
+    var loadingPage = activePage;   // capture in case user switches mid-fetch
     try {
       var results = await Promise.all([
-        fetch(CONTENT_API, { headers: ghHeaders(token), cache: 'no-cache' }),
-        fetch(SITE_INDEX,  { cache: 'no-cache' }),
+        fetch(contentApi(loadingPage), { headers: ghHeaders(token), cache: 'no-cache' }),
+        fetch(pageSiteUrl(loadingPage), { cache: 'no-cache' }),
       ]);
       var mdRes   = results[0];
       var siteRes = results[1];
@@ -683,16 +841,29 @@
       }
       if (!mdRes.ok) throw new Error('GitHub API returned HTTP ' + mdRes.status);
 
-      var json      = await mdRes.json();
-      fileSha       = json.sha;
-      originalMd    = fromB64(json.content);
-      iframeSrcHtml = await siteRes.text();
+      var json = await mdRes.json();
+      var siteText = await siteRes.text();
 
-      loadMarked(function () {
-        renderIframe();
-        setStatus('Ready', 'is-ok');
-        clearStatus(2000);
-      });
+      // Write directly to the page's cache; only mirror to active vars if the
+      // user hasn't switched away while we were fetching.
+      var ps = getPageState(loadingPage);
+      ps.fileSha       = json.sha;
+      ps.originalMd    = fromB64(json.content);
+      ps.iframeSrcHtml = siteText;
+      ps.loaded        = true;
+
+      if (loadingPage === activePage) {
+        loadActiveFromPageState();
+        loadMarked(function () {
+          renderIframe();
+          setStatus('Ready', 'is-ok');
+          clearStatus(2000);
+        });
+      } else {
+        // User switched pages during load; just ensure marked is available
+        // for whenever they come back.
+        loadMarked(function () {});
+      }
     } catch (err) {
       if (err.code === 'auth') { clearToken(); showTokenDialog(err.message); }
       else { setStatus('Load failed: ' + err.message, 'is-err'); }
@@ -704,13 +875,16 @@
     if (activeKey) confirmPopup();
     publishBtn.disabled = true;
     setStatus('Saving…');
+    var publishPage = activePage;
+    var commitMsg = 'Update ' + (publishPage === '_default' ? 'site' : publishPage)
+                  + ' content via staging editor';
     try {
       var mdText = buildMarkdown();
-      var putRes = await fetch(CONTENT_API, {
+      var putRes = await fetch(contentApi(publishPage), {
         method: 'PUT',
         headers: ghHeaders(token),
         body: JSON.stringify({
-          message: 'Update home page content via staging editor',
+          message: commitMsg,
           content: toB64(mdText),
           sha:     fileSha,
           branch:  GITHUB_BRANCH,
@@ -726,6 +900,7 @@
       var putJson = await putRes.json();
       fileSha    = putJson.content.sha;
       originalMd = mdText;
+      draft = {};
 
       setStatus('Saved — deploying…');
       var depRes = await fetch(DEPLOY_API, {
@@ -738,7 +913,7 @@
       }
       if (depRes.status !== 204) throw new Error('Deploy trigger failed (HTTP ' + depRes.status + ').');
 
-      draft = {};
+      syncActiveToPageState();
       updateDirty();
       saveScroll();
       renderIframe();
@@ -815,6 +990,8 @@
   // ── Init ──────────────────────────────────────────────────────────────────
 
   (function init() {
+    buildPageSelector();
+    updateViewLiveHref();
     var token = getToken();
     if (token) { loadContent(token); return; }
     showTokenDialog();

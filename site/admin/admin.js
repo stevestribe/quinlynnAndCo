@@ -885,16 +885,25 @@
       if (mdRes.status === 401 || mdRes.status === 403) {
         throw Object.assign(new Error('Token invalid or expired.'), { code: 'auth' });
       }
-      if (!mdRes.ok) throw new Error('GitHub API returned HTTP ' + mdRes.status);
 
-      var json = await mdRes.json();
-      var siteText = await siteRes.text();
-
-      // Write directly to the page's cache; only mirror to active vars if the
-      // user hasn't switched away while we were fetching.
       var ps = getPageState(loadingPage);
-      ps.fileSha       = json.sha;
-      ps.originalMd    = fromB64(json.content);
+      var siteText = await siteRes.text();
+      var newStatus = 'Ready';
+
+      if (mdRes.status === 404) {
+        // No content file yet — treat as a new page. The first publish
+        // will create the .md from the field schema + displayed text.
+        ps.fileSha    = '';
+        ps.originalMd = '';
+        newStatus = 'New page — first publish will create the markdown file.';
+      } else if (!mdRes.ok) {
+        throw new Error('GitHub API returned HTTP ' + mdRes.status);
+      } else {
+        var json = await mdRes.json();
+        ps.fileSha    = json.sha;
+        ps.originalMd = fromB64(json.content);
+      }
+
       ps.iframeSrcHtml = siteText;
       ps.loaded        = true;
 
@@ -902,8 +911,8 @@
         loadActiveFromPageState();
         loadMarked(function () {
           renderIframe();
-          setStatus('Ready', 'is-ok');
-          clearStatus(2000);
+          setStatus(newStatus, 'is-ok');
+          clearStatus(5000);
         });
       } else {
         // User switched pages during load; just ensure marked is available
@@ -926,15 +935,18 @@
                   + ' content via staging editor';
     try {
       var mdText = buildMarkdown();
+      var putBody = {
+        message: commitMsg,
+        content: toB64(mdText),
+        branch:  GITHUB_BRANCH,
+      };
+      // Only include sha when updating an existing file. Omitting it on a
+      // PUT to a new path creates the file.
+      if (fileSha) putBody.sha = fileSha;
       var putRes = await fetch(contentApi(publishPage), {
         method: 'PUT',
         headers: ghHeaders(token),
-        body: JSON.stringify({
-          message: commitMsg,
-          content: toB64(mdText),
-          sha:     fileSha,
-          branch:  GITHUB_BRANCH,
-        }),
+        body: JSON.stringify(putBody),
       });
       if (putRes.status === 401 || putRes.status === 403) {
         throw Object.assign(new Error('Token lacks write permission.'), { code: 'auth' });

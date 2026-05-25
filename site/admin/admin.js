@@ -231,7 +231,7 @@
         '          <div class="pcard-img"><div class="' + phCls + '">' +
         (cd.tag ? '<span class="ph-tag">' + esc(cd.tag) + '</span>' : '') + '</div></div>\n' +
         '          <div class="pcard-meta">\n' +
-        '            <div class="pcard-name">' + esc(cd.name) + '<!-- QC-PENCIL:card' + (i + 1) + ' --></div>\n' +
+        '            <div class="pcard-name">' + esc(cd.name) + pencilBtn('card' + (i + 1)) + '</div>\n' +
         '            <div class="pcard-price">' + esc(cd.price) + '</div>\n' +
         (cd.desc ? '            <p class="pcard-desc">' + esc(cd.desc) + '</p>\n' : '') +
         '            <span class="pcard-cta">View on Etsy\n              ' + ARROW_SVG + '\n            </span>\n' +
@@ -246,7 +246,7 @@
   function injectQC(html, key, value) {
     return html.replace(
       new RegExp('(<!-- QC:' + key + ' -->)[\\s\\S]*?(<!-- /QC:' + key + ' -->)', 'g'),
-      '$1' + value + '$2'
+      function (m, open, close) { return open + value + close; }
     );
   }
 
@@ -277,10 +277,11 @@
     var pH = mdInline(g('products', 'heading')); if (pH) html = injectQC(html, 'products-heading', pH);
     var pC = renderCards(secs.products || {});   if (pC) html = injectQC(html, 'products-cards',   pC);
 
-    var iH  = mdInline(g('inquire', 'heading'));  if (iH)  html = injectQC(html, 'inquire-heading',  iH);
-    var iL  = mdInline(g('inquire', 'lede'));      if (iL)  html = injectQC(html, 'inquire-lede',     iL);
-    var iTH = mdInline(g('inquire', 'thanks-h')); if (iTH) html = injectQC(html, 'inquire-thanks-h', iTH);
-    var iTP = esc(g('inquire', 'thanks-p'));       if (iTP) html = injectQC(html, 'inquire-thanks-p', iTP);
+    var iH  = mdInline(g('inquire', 'heading'));   if (iH)  html = injectQC(html, 'inquire-heading',   iH);
+    var iL  = mdInline(g('inquire', 'lede'));       if (iL)  html = injectQC(html, 'inquire-lede',      iL);
+    var iTH = mdInline(g('inquire', 'thanks-h'));  if (iTH) html = injectQC(html, 'inquire-thanks-h',  iTH);
+    var iTP = esc(g('inquire', 'thanks-p'));        if (iTP) html = injectQC(html, 'inquire-thanks-p',  iTP);
+    var iEN = mdInline(g('inquire', 'etsy-note')); if (iEN) html = injectQC(html, 'inquire-etsy-note', iEN);
 
     var fT = mdInline(g('footer', 'tagline')); if (fT) html = injectQC(html, 'footer-tagline', fT);
 
@@ -385,13 +386,6 @@
       /(<!-- \/QC:about-meta -->)/,
       '$1' + pencilBtn('about-meta', 'qc-pencil-block')
     );
-
-    // Per-card pencils — inline after product name
-    for (var i = 1; i <= 6; i++) {
-      var key = 'card' + i;
-      if (!FIELDS[key]) continue;
-      html = html.replace('<!-- QC-PENCIL:' + key + ' -->', pencilBtn(key));
-    }
 
     // Apply pencil visibility state
     if (!pencilsOn) {

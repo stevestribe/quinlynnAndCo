@@ -58,6 +58,8 @@ window.ADMIN_FIELDS = {
   'inquire-thanks-h': { label: 'Thank-you heading', type: 'textarea', section: 'inquire', sub: 'thanks-h' },
   'inquire-thanks-p': { label: 'Thank-you body',   type: 'textarea', section: 'inquire',  sub: 'thanks-p',
                         hint: 'Plain text only' },
+  'inquire-etsy-note': { label: 'Etsy browse note', type: 'textarea', section: 'inquire', sub: 'etsy-note',
+                         hint: 'Use **bold** for emphasis' },
 
   // ── Footer ────────────────────────────────────────────────────────────────
   'footer-tagline': { label: 'Footer tagline',     type: 'textarea', section: 'footer',   sub: 'tagline' },
@@ -72,6 +74,6 @@ window.ADMIN_SECTION_ORDER = [
   { id: 'hero',     keys: ['title', 'sub'] },
   { id: 'about',    keys: ['heading', 'bio1', 'quote', 'bio2', 'sign', 'meta'] },
   { id: 'products', keys: ['heading', 'card1', 'card2', 'card3', 'card4', 'card5', 'card6'] },
-  { id: 'inquire',  keys: ['heading', 'lede', 'thanks-h', 'thanks-p'] },
+  { id: 'inquire',  keys: ['heading', 'lede', 'thanks-h', 'thanks-p', 'etsy-note'] },
   { id: 'footer',   keys: ['tagline'] },
 ];

@@ -87,6 +87,9 @@ Thanks for dropping me *a note.*
 ### thanks-p
 I'll be in touch soon — usually within two or three days.
 
+### etsy-note
+**Rather browse first?** Recent and ready-to-ship pieces are listed on Etsy. The full shop updates monthly.
+
 ## footer
 
 ### tagline

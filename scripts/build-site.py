@@ -164,6 +164,7 @@ def main():
         ('inquire-lede',      md_inline(get('inquire', 'lede'))),
         ('inquire-thanks-h',  md_inline(get('inquire', 'thanks-h'))),
         ('inquire-thanks-p',  esc(get('inquire', 'thanks-p'))),
+        ('inquire-etsy-note', md_inline(get('inquire', 'etsy-note'))),
         ('footer-tagline',  md_inline(get('footer', 'tagline'))),
     ]
     for key, value in simple:

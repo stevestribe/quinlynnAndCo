@@ -2,6 +2,12 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* The engine toggles visibility via the `hidden` attribute on several
+   elements (#adm-frame-overlay, #adm-dirty-msg, #token-error). Some of those
+   elements also carry display rules (e.g. display:flex) which would override
+   the default [hidden] { display: none }. Force [hidden] to win. */
+[hidden] { display: none !important; }
+
 :root {
   --adm-bar-h:        52px;
   --adm-bg:           #F0EDE8;
@@ -64,6 +70,21 @@ html, body {
   padding: 0.25em 0.65em;
   border-radius: 3px;
 }
+
+/* Page picker (multi-page sites only — created dynamically by the engine). */
+.adm-page-select {
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--adm-text);
+  background: var(--adm-bg);
+  border: 1px solid var(--adm-border);
+  border-radius: 4px;
+  padding: 0.3em 0.55em;
+  cursor: pointer;
+}
+.adm-page-select:hover { border-color: var(--adm-primary); }
+.adm-page-select:focus { outline: 2px solid var(--adm-primary); outline-offset: 1px; }
 
 .adm-dirty-msg {
   display: flex;
@@ -220,6 +241,10 @@ html, body {
   background: transparent;
   z-index: 10;
   cursor: default;
+  /* Don't block clicks — clicks on iframe content must reach pencils so the
+     user can switch popups by clicking another pencil. Click-anywhere-to-
+     cancel is handled by the iframe forwarding clicks back to the parent. */
+  pointer-events: none;
 }
 
 /* ── Floating field popup ────────────────────────────────────────────────── */

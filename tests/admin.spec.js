@@ -413,17 +413,17 @@ test.describe('Card popup', () => {
   test('card popup shows all four fields with parsed values', async ({ page }) => {
     await openFieldPopup(page, 'card1');
 
-    await expect(page.locator('[data-card-part="name"]')).toHaveValue('Linen Tea Towel');
-    await expect(page.locator('[data-card-part="price"]')).toHaveValue('$28');
-    await expect(page.locator('[data-card-part="tag"]')).toHaveValue('Bestseller');
-    await expect(page.locator('[data-card-part="desc"]')).toHaveValue('Heavyweight 100% linen');
+    await expect(page.locator('[data-item-part="name"]')).toHaveValue('Linen Tea Towel');
+    await expect(page.locator('[data-item-part="price"]')).toHaveValue('$28');
+    await expect(page.locator('[data-item-part="tag"]')).toHaveValue('Bestseller');
+    await expect(page.locator('[data-item-part="desc"]')).toHaveValue('Heavyweight 100% linen');
   });
 
   test('editing card fields updates live preview', async ({ page }) => {
     const iframeLocator = page.frameLocator('#adm-frame');
     await openFieldPopup(page, 'card1');
 
-    await page.locator('[data-card-part="name"]').fill('Cotton Napkin');
+    await page.locator('[data-item-part="name"]').fill('Cotton Napkin');
 
     await expect(
       iframeLocator.locator('[data-card-key="card1"] .pcard-name')

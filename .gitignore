@@ -8,9 +8,13 @@
 
 # Node + Playwright artifacts (test runs and dependencies)
 node_modules/
+package-lock.json
 playwright-report/
 test-results/
 *.log
+
+# Design/handoff packages dropped into the repo root for one-off use
+*.zip
 
 # Never commit environment secrets
 .env
